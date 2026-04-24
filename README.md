@@ -219,7 +219,34 @@ curl http://127.0.0.1:8000/health
 - `password`：明文密码，仅建议本地临时使用。
 - `password_sha256`：SHA-256 哈希，生产环境更推荐使用。
 
-示例：
+当前项目里已经存在的普通管理员账号如下：
+
+```json
+{
+  "users": [
+    { "username": "lipangbo", "password": "123" },
+    { "username": "marius", "password": "456" },
+    { "username": "office001", "password": "office234" },
+    { "username": "admin123", "password": "admin456" }
+  ]
+}
+```
+
+另外，后端里还存在一组单独写死在 `api.py` 中的高级管理员验证账号：
+
+```text
+高级账号：admin123
+高级密码：admin456
+```
+
+也就是说，接手时需要区分两种权限：
+
+- 普通管理员账号：来自 `data/admin_users.json`
+- 高级管理员账号：当前写死在 `api.py` 的 `/api/admin/senior-login` 逻辑中
+
+如果后续继续沿用这些账号，至少要先确认是否需要改密码；如果准备正式交接，建议尽快替换为新的账号体系。
+
+如果要改成哈希存储，可以参考下面的格式：
 
 ```json
 {
@@ -321,6 +348,10 @@ Browser
 
 README 只保留摘要，详细步骤请查看 `DEPLOYMENT.md`。
 
+接手服务器时，还应该同时阅读下面这份交接文档：
+
+- [SERVER_HANDOVER.md](/Users/doormi/Documents/time-test1/SERVER_HANDOVER.md)
+
 ### 简版部署流程
 
 1. 将项目上传到服务器目录。
@@ -334,6 +365,7 @@ README 只保留摘要，详细步骤请查看 `DEPLOYMENT.md`。
 - 当前仓库内 `deploy/nginx.conf` 已体现线上站点的现有反向代理方式。
 - README 不把现有域名、服务器地址或私密配置当作默认模板推荐给新环境。
 - 新环境部署时，应根据自己的域名、证书路径、用户和目录重新修改配置。
+- 当前线上服务器是上一任维护者个人购买的，不能默认继续使用；接手方需要自备服务器、域名和证书后重新部署。
 
 ## 开发与维护建议
 
