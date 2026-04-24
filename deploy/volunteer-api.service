@@ -1,0 +1,22 @@
+[Unit]
+Description=Volunteer Hours FastAPI Service
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+
+# 请改成你的项目目录
+WorkingDirectory=/opt/time-test1
+
+# 请改成你的虚拟环境路径
+ExecStart=/opt/time-test1/.venv/bin/uvicorn api:app --host 127.0.0.1 --port 8000
+
+Restart=always
+RestartSec=3
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target
+

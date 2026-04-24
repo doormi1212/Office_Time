@@ -1,0 +1,9 @@
+#!/usr/bin/expect -f
+set timeout 300
+set password "Lipangbo121"
+spawn rsync -avz --exclude '.venv' --exclude '__pycache__' --exclude '.git' --exclude '.DS_Store' --exclude '.trae' --exclude 'project.tar.gz' --exclude 'sync.exp' ./ root@101.133.160.196:/www/wwwroot/101.133.160.196/
+expect {
+    "password:" { send "$password\r"; exp_continue }
+    "(yes/no)?" { send "yes\r"; exp_continue }
+    eof
+}

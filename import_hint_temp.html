@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>时长录入工具 - 标准格式要求</title>
+</head>
+<body>
+  <div id="screen-admin-import">
+    <div class="card card-shell mb-4 border-danger shadow-sm">
+      <div class="card-body">
+        <h4 class="h6 fw-bold text-danger mb-3"><i class="bi bi-exclamation-octagon-fill me-2"></i>待录入时长表：标准格式要求</h4>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <div class="p-3 bg-light rounded-3 border">
+              <div class="small fw-bold text-dark mb-2">1. 必须包含的列名</div>
+              <ul class="small text-secondary mb-0 ps-3">
+                <li><strong class="text-primary">姓名</strong>：用于在总表中匹配学生。</li>
+                <li><strong class="text-primary">时长</strong>：本次活动的志愿时长。</li>
+                <li><strong class="text-secondary">年级</strong>（可选）：匹配失败时用于提示。</li>
+              </ul>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="p-3 bg-light rounded-3 border">
+              <div class="small fw-bold text-dark mb-2">2. 录入规则提醒</div>
+              <ul class="small text-secondary mb-0 ps-3">
+                <li><strong class="text-dark">命名规范</strong>：请将文件命名为“<span class="text-danger fw-bold">活动名称.xlsx</span>”（该名称将自动作为新列的表头）。</li>
+                <li><strong class="text-dark">表头规范</strong>：第一行应为表头。</li>
+                <li><strong class="text-dark">数据格式</strong>：时长列支持公式（自动转数字）。</li>
+                <li><strong class="text-dark">匹配规则</strong>：仅根据“姓名”精准匹配。</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

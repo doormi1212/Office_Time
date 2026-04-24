@@ -1,0 +1,2393 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>时长查询与补录系统（测试版）</title>
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+    crossorigin="anonymous"
+  />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bs-primary: #0c6e5e;
+      --bs-primary-rgb: 12, 110, 94;
+      --nav-dark: #0a3d36;
+    }
+    body {
+      font-family: "Noto Sans SC", system-ui, sans-serif;
+      background: #f1f3f5;
+      min-height: 100vh;
+    }
+    .navbar-campus {
+      background: linear-gradient(135deg, var(--nav-dark) 0%, #0d5c52 100%);
+      box-shadow: 0 4px 20px rgba(10, 61, 54, 0.35);
+    }
+    .main-col { max-width: 860px; }
+    .card-shell {
+      border: none;
+      border-radius: 1rem;
+      box-shadow: 0 0.35rem 1.25rem rgba(15, 23, 42, 0.08);
+      overflow: hidden;
+    }
+    .card-shell .card-header {
+      background: linear-gradient(180deg, #f8fafb 0%, #eef2f1 100%);
+      border-bottom: 1px solid rgba(12, 110, 94, 0.12);
+    }
+    .step-dot {
+      width: 2rem;
+      height: 2rem;
+      border-radius: 50%;
+      background: var(--bs-primary);
+      color: #fff;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .btn-primary {
+      font-weight: 600;
+      transition: transform 0.15s ease, box-shadow 0.15s ease;
+    }
+    .btn-primary:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 0.5rem 1rem rgba(var(--bs-primary-rgb), 0.35);
+    }
+    .min-h-msg { min-height: 1.25rem; display: inline-block; }
+    .numeric-help { font-size: 0.85rem; }
+    .tip-box { white-space: pre-line; }
+    .link-admin {
+      font-size: 0.9rem;
+      color: rgba(0,0,0,0.55);
+      text-decoration: none;
+    }
+    .link-admin:hover { color: rgba(0,0,0,0.75); text-decoration: underline; }
+    label.form-label { margin-bottom: 0.2rem; }
+    
+    /* 管理员表格字体调小，防止换行 */
+    #screen-admin .table {
+      font-size: 0.75rem; /* 进一步调小字体 */
+    }
+    #screen-admin .table th, #screen-admin .table td {
+      padding: 0.3rem 0.2rem;
+      vertical-align: middle;
+      white-space: normal; /* 默认允许换行 */
+    }
+    /* 强制不换行的列 */
+    #screen-admin .table th:nth-child(2), 
+    #screen-admin .table td:nth-child(2) {
+      white-space: nowrap;
+    }
+    /* 调整备注框的最大宽度 */
+    .admin-note-box {
+      max-width: 180px;
+      font-size: 0.7rem;
+    }
+    /* 调整状态选择框的大小 */
+    .record-status-select {
+      font-size: 0.75rem;
+      padding: 0.1rem 0.2rem;
+      width: auto;
+      min-width: 80px;
+    }
+  </style>
+</head>
+
+<body class="d-flex flex-column min-vh-100">
+  <nav class="navbar navbar-expand-lg navbar-dark navbar-campus sticky-top">
+    <div class="container main-col d-flex align-items-center justify-content-between">
+      <span class="navbar-brand fw-bold mb-0">时长查询与补录系统（测试版）</span>
+      <span class="navbar-text text-white-50 small d-none d-md-inline">Student / Admin</span>
+    </div>
+  </nav>
+
+  <main class="flex-grow-1 py-4 py-lg-5">
+    <div class="container main-col">
+      <!-- 1) 首页 -->
+      <div id="screen-home">
+        <!-- 顶部提示文字 -->
+        <div class="alert alert-warning border-0 shadow-sm mb-4 py-3 rounded-3">
+          <div class="d-flex align-items-center gap-3">
+            <i class="bi bi-exclamation-triangle-fill fs-4 text-warning"></i>
+            <div class="small">
+              <p class="mb-1 fw-bold">目前处于测试阶段，如出现问题，请转至接龙小程序进行查询和录入</p>
+              <p class="mb-0 text-secondary">欢迎通过办公室微信：<code>doormi1212</code> 反馈问题</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="text-center text-lg-start mb-4">
+          <h1 class="h3 fw-bold text-dark mb-2">学生服务</h1>
+          <p class="text-secondary mb-0">点击进入：时长查询 / 时长补录（校内/校外）</p>
+        </div>
+
+        <div class="row g-4 mb-4">
+          <div class="col-md-12">
+            <div class="card card-shell h-100 border-success shadow-sm">
+              <div class="card-header py-3 bg-success bg-opacity-10">
+                <div class="d-flex align-items-start gap-3">
+                  <span class="step-dot bg-success"><i class="bi bi-check-circle"></i></span>
+                  <div>
+                    <h2 class="h5 mb-1 fw-bold text-success">大四时长及项数达标查询</h2>
+                    <p class="small text-secondary mb-0">针对2022级毕业达标校验</p>
+                  </div>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="row align-items-center">
+                  <div class="col-lg-8">
+                    <p class="text-secondary mb-lg-0">系统将根据 2022 级总表数据，自动校验时长与项数是否符合毕业要求（总时长≥32h，项数≥8）。</p>
+                  </div>
+                  <div class="col-lg-4">
+                    <button class="btn btn-success w-100 btn-lg" id="btn-go-special-query" type="button">进入达标查询</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row g-4">
+          <div class="col-md-6">
+            <div class="card card-shell h-100">
+              <div class="card-header py-3">
+                <div class="d-flex align-items-start gap-3">
+                  <span class="step-dot"><i class="bi bi-search"></i></span>
+                  <div>
+                    <h2 class="h5 mb-1 fw-bold">时长查询</h2>
+                    <p class="small text-secondary mb-0">姓名 + 学号同时输入</p>
+                  </div>
+                </div>
+              </div>
+              <div class="card-body">
+                <button class="btn btn-primary w-100 btn-lg" id="btn-go-query" type="button">进入查询</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <div class="card card-shell h-100">
+              <div class="card-header py-3">
+                <div class="d-flex align-items-start gap-3">
+                  <span class="step-dot"><i class="bi bi-pencil-square"></i></span>
+                  <div>
+                    <h2 class="h5 mb-1 fw-bold">时长补录</h2>
+                    <p class="small text-danger mb-0">该功能暂未开放，请转至补录接龙小程序</p>
+                  </div>
+                </div>
+              </div>
+              <div class="card-body">
+                <button class="btn btn-secondary w-100 btn-lg" id="btn-go-topup" type="button">功能暂未开放</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-4 text-center">
+          <a href="#" id="admin-entry" class="link-admin">管理员入口</a>
+        </div>
+      </div>
+
+      <!-- 1.5) 年级选择 (时长查询的次界面) -->
+      <div id="screen-grade-select" class="d-none">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <div>
+            <h2 class="h4 fw-bold text-dark mb-1">选择年级</h2>
+            <p class="text-secondary mb-0 small">请选择您所属的年级以查询时长</p>
+          </div>
+          <button class="btn btn-outline-secondary rounded-pill" id="btn-back-home-grade" type="button">返回上一级</button>
+        </div>
+
+        <div class="row g-4">
+          <div class="col-6 col-md-3">
+            <button class="btn btn-outline-primary w-100 py-4 btn-grade" data-grade="2022">
+              <div class="h4 fw-bold mb-1">2022级</div>
+              <div class="small opacity-75">大四</div>
+            </button>
+          </div>
+          <div class="col-6 col-md-3">
+            <button class="btn btn-outline-primary w-100 py-4 btn-grade" data-grade="2023">
+              <div class="h4 fw-bold mb-1">2023级</div>
+              <div class="small opacity-75">大三</div>
+            </button>
+          </div>
+          <div class="col-6 col-md-3">
+            <button class="btn btn-outline-primary w-100 py-4 btn-grade" data-grade="2024">
+              <div class="h4 fw-bold mb-1">2024级</div>
+              <div class="small opacity-75">大二</div>
+            </button>
+          </div>
+          <div class="col-6 col-md-3">
+            <button class="btn btn-outline-primary w-100 py-4 btn-grade" data-grade="2025">
+              <div class="h4 fw-bold mb-1">2025级</div>
+              <div class="small opacity-75">大一</div>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2) 时长查询 -->
+      <div id="screen-query" class="d-none">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <div>
+            <h2 class="h4 fw-bold text-dark mb-1">时长查询</h2>
+            <p class="text-secondary mb-0 small">请输入姓名和学号以获得匹配的汇总结果。</p>
+            <p class="small text-muted mb-0 mt-1" id="latest-upload-hint">最新表格上传日期：加载中...</p>
+          </div>
+          <div class="d-flex gap-2 align-items-center">
+            <div id="download-master-hint" class="small text-primary d-none me-1">
+              如果要查看活动时长明细，请下载原表
+            </div>
+            <button class="btn btn-outline-primary rounded-pill d-none" id="btn-download-master-query" type="button">
+              <i class="bi bi-download me-1"></i>下载总表源文件
+            </button>
+            <button class="btn btn-outline-secondary rounded-pill" id="btn-back-home-1" type="button">返回上一级</button>
+          </div>
+        </div>
+
+        <div class="card card-shell mb-4">
+          <div class="card-header py-3">
+            <div class="d-flex align-items-start gap-3">
+              <span class="step-dot">1</span>
+              <div>
+                <h3 class="h6 mb-1 fw-bold">查询条件</h3>
+                <p class="small text-secondary mb-0">姓名 + 学号必填</p>
+              </div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label small fw-semibold text-secondary" for="q-name">姓名</label>
+                <input type="text" id="q-name" class="form-control" placeholder="请输入姓名" autocomplete="off" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-semibold text-secondary" for="q-id">学号</label>
+                <input type="text" id="q-id" class="form-control" placeholder="请输入学号" autocomplete="off" />
+              </div>
+            </div>
+            <div class="d-flex flex-wrap align-items-center gap-3 mt-4">
+              <button class="btn btn-primary btn-lg px-4" type="button" id="btn-do-search">查询</button>
+              <span id="search-msg" class="small text-secondary min-h-msg" role="status"></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card card-shell">
+          <div class="card-header py-3">
+            <div class="d-flex align-items-start gap-3">
+              <span class="step-dot" style="background:#6b7280;"> </span>
+              <div>
+                <h3 class="h6 mb-1 fw-bold">查询结果</h3>
+                <p class="small text-secondary mb-0">匹配成功将展示总时长与项数</p>
+              </div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="table-responsive rounded-3 border d-none" id="table-wrap">
+              <table class="table table-hover table-sm mb-0" id="result-table">
+                <thead class="table-light">
+                  <tr>
+                    <th class="ps-3">总时长</th>
+                    <th>项数</th>
+                  </tr>
+                </thead>
+                <tbody id="result-body"></tbody>
+              </table>
+            </div>
+            <p class="small text-secondary mb-0" id="empty-hint" style="display:none;">暂无匹配记录</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3) 时长补录（校内/校外二级界面） -->
+      <div id="screen-topup" class="d-none">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <div>
+            <h2 class="h4 fw-bold text-dark mb-1">时长补录</h2>
+            <p class="text-secondary mb-0 small">请选择校内时长或校外时长提交补录信息。</p>
+          </div>
+          <button class="btn btn-outline-secondary rounded-pill" id="btn-back-home-2" type="button">返回上一级</button>
+        </div>
+
+        <div class="card card-shell mb-4">
+          <div class="card-body">
+            <ul class="nav nav-pills" id="topupTab" role="tablist">
+              <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="tab-internal" data-bs-toggle="pill" data-bs-target="#pane-internal" type="button" role="tab" aria-controls="pane-internal" aria-selected="true">
+                  校内时长补录
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="tab-external" data-bs-toggle="pill" data-bs-target="#pane-external" type="button" role="tab" aria-controls="pane-external" aria-selected="false">
+                  校外时长补录
+                </button>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="tab-content">
+          <!-- 校内 -->
+          <div class="tab-pane fade show active" id="pane-internal" role="tabpanel" aria-labelledby="tab-internal">
+            <div class="card card-shell mb-4">
+              <div class="card-header py-3">
+                <div class="d-flex align-items-start gap-3">
+                  <span class="step-dot">内</span>
+                  <div>
+                    <h3 class="h6 mb-1 fw-bold">校内时长补录须知</h3>
+                    <p class="small text-secondary mb-0">请在提交前仔细阅读</p>
+                  </div>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="alert alert-info border-0 mb-4 py-3">
+                  <h4 class="h6 fw-bold mb-3 text-primary">🏫 校内时长补录须知</h4>
+                  <div class="small lh-lg">
+                    <p class="mb-2">对于校本部组织的志愿活动，请提供志愿北京时长截图。校内志愿时长指的是由青协或者学校组织的志愿活动。</p>
+                    <p class="mb-2">同学们在志愿时长公示中检查自己的时长后，如发现有遗漏，请接龙上传遗漏活动名称、时长及相关证明。上传后，青协办公室会定期检查并录入，如证明不符合规定会由微信通知。</p>
+                    <div class="bg-white bg-opacity-50 p-2 rounded mb-2 border border-info border-opacity-25">
+                      <p class="fw-bold mb-1">注意：</p>
+                      <p class="mb-1">1. 选取证明材料时，请选取正规、有效力的证明材料，如有公章的证明文件、指导老师的签名文件、志愿平台的截图等。</p>
+                      <p class="mb-0">2. 如有因调整年级或转专业导致时长缺失的情况请联系我们。</p>
+                    </div>
+                    <p class="mb-0 pt-2 border-top">
+                      <strong>如有相关疑问，请联系青协办公室微信：</strong><br>
+                      <span class="me-3">李同学：<code>doormi1212</code></span>
+                      <span>张同学：<code>He926534</code></span>
+                    </p>
+                  </div>
+                </div>
+
+                <form id="internal-form">
+                  <div class="row g-3">
+                    <div class="col-md-4">
+                      <label class="form-label small fw-semibold text-secondary" for="in-name">姓名</label>
+                      <input type="text" class="form-control" id="in-name" name="name" required placeholder="请输入姓名" autocomplete="off" />
+                    </div>
+                    <div class="col-md-4">
+                      <label class="form-label small fw-semibold text-secondary" for="in-class">班级</label>
+                      <select class="form-select" id="in-class" name="class_name" required>
+                        <option value="" selected disabled>请选择班级</option>
+                        <option>金融一班</option>
+                        <option>金融二班</option>
+                        <option>金融三班</option>
+                        <option>金融四班</option>
+                        <option>法语班</option>
+                        <option>国管班</option>
+                        <option>人管班</option>
+                        <option>传播班</option>
+                        <option>数学班</option>
+                        <option>数据科学班</option>
+                      </select>
+                    </div>
+                    <div class="col-md-4">
+                      <label class="form-label small fw-semibold text-secondary" for="in-grade">年级</label>
+                      <select class="form-select" id="in-grade" name="grade" required>
+                        <option value="" selected disabled>请选择年级</option>
+                        <option>2024</option>
+                        <option>2025</option>
+                        <option>2023</option>
+                        <option>2022</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="row g-3 mt-1">
+                    <div class="col-md-6">
+                      <label class="form-label small fw-semibold text-secondary" for="in-academic-year">志愿活动所处学年</label>
+                      <select class="form-select" id="in-academic-year" name="academic_year" required>
+                        <option value="" selected disabled>请选择学年</option>
+                        <option>25-26学年</option>
+                        <option>24-25学年</option>
+                        <option>23-24学年</option>
+                        <option>22-23学年</option>
+                      </select>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label small fw-semibold text-secondary" for="in-duration">时长（数字）</label>
+                      <input type="number" min="0" step="1" class="form-control" id="in-duration" name="duration" required placeholder="例如：2" />
+                    </div>
+                  </div>
+
+                  <div class="mt-3">
+                    <label class="form-label small fw-semibold text-secondary" for="in-activity-name">活动名称</label>
+                    <input type="text" class="form-control" id="in-activity-name" name="activity_name" required placeholder="请输入活动名称" autocomplete="off" />
+                  </div>
+
+                  <div class="mt-3">
+                    <label class="form-label small fw-semibold text-secondary" for="in-proof">证明图片（最多9张）</label>
+                    <input type="file" class="form-control" id="in-proof" name="proof" required accept=".png,.jpg,.jpeg,.gif,.webp" multiple />
+                    <div class="form-text">建议上传清晰、可核验的截图或证明，支持多选（9张以内）</div>
+                  </div>
+
+                  <div class="mt-3">
+                    <label class="form-label small fw-semibold text-secondary" for="in-wechat">微信号联系方式</label>
+                    <input type="text" class="form-control" id="in-wechat" name="wechat" required placeholder="请输入微信号" autocomplete="off" />
+                  </div>
+
+                  <div class="mt-3">
+                    <label class="form-label small fw-semibold text-secondary" for="in-note">备注（选填）</label>
+                    <textarea class="form-control" id="in-note" name="note" rows="3" placeholder="可填写补充说明"></textarea>
+                  </div>
+
+                  <div class="d-flex flex-wrap align-items-center gap-3 mt-4">
+                    <button type="submit" class="btn btn-primary btn-lg px-4" id="btn-submit-internal">提交校内补录</button>
+                    <span id="internal-msg" class="small text-secondary min-h-msg" role="status"></span>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+
+          <!-- 校外 -->
+          <div class="tab-pane fade" id="pane-external" role="tabpanel" aria-labelledby="tab-external">
+            <div class="card card-shell mb-4">
+              <div class="card-header py-3">
+                <div class="d-flex align-items-start gap-3">
+                  <span class="step-dot">外</span>
+                  <div>
+                    <h3 class="h6 mb-1 fw-bold">校外时长补录须知</h3>
+                    <p class="small text-secondary mb-0">请在提交前仔细阅读</p>
+                  </div>
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="alert alert-info border-0 mb-4 py-3">
+                  <h4 class="h6 fw-bold mb-3 text-primary">🌍 校外时长补录须知</h4>
+                  <div class="small lh-lg">
+                    <div class="bg-white bg-opacity-75 p-3 rounded mb-3 border border-primary border-opacity-25 shadow-sm">
+                      <p class="mb-2 fw-bold text-primary">时长认证要求（1、2须同时满足）：</p>
+                      <p class="mb-2">1. 以下两种证明文件二选一：有具体可查的公章，且标明具体合理时长数的证明文件；正规，且具有知名度、权威性的志愿平台（公众号/小程序）志愿时长截图。</p>
+                      <p class="mb-0">2. 提交本人参与志愿活动的照片记录，以及相应的活动内容文字描述，以证明该活动的志愿活动性质，即通过切身参与志愿活动，达到服务社会的目的。</p>
+                    </div>
+                    <p class="mb-2">请同学们上传校外志愿时长补录相关证明。上传后，青协办公室会定期检查并录入，如证明不符合规定会由微信通知。</p>
+                    <div class="bg-white bg-opacity-50 p-2 rounded mb-2 border border-info border-opacity-25">
+                      <p class="fw-bold mb-1">注意：</p>
+                      <p class="mb-0">生效的校外志愿活动日期必须在入学后（例如25级同学不可录入25年9月以前的志愿活动）。</p>
+                    </div>
+                    <p class="mb-0 pt-2 border-top">
+                      <strong>如有相关疑问，请联系青协办公室微信：</strong><br>
+                      <span class="me-3">李同学：<code>doormi1212</code></span>
+                      <span>张同学：<code>He926534</code></span>
+                    </p>
+                  </div>
+                </div>
+
+                <form id="external-form">
+                  <div class="row g-3">
+                    <div class="col-md-4">
+                      <label class="form-label small fw-semibold text-secondary" for="out-name">姓名</label>
+                      <input type="text" class="form-control" id="out-name" name="name" required placeholder="请输入姓名" autocomplete="off" />
+                    </div>
+                    <div class="col-md-4">
+                      <label class="form-label small fw-semibold text-secondary" for="out-class">班级</label>
+                      <select class="form-select" id="out-class" name="class_name" required>
+                        <option value="" selected disabled>请选择班级</option>
+                        <option>金融一班</option>
+                        <option>金融二班</option>
+                        <option>金融三班</option>
+                        <option>金融四班</option>
+                        <option>法语班</option>
+                        <option>国管班</option>
+                        <option>人管班</option>
+                        <option>传播班</option>
+                        <option>数学班</option>
+                        <option>数据科学班</option>
+                      </select>
+                    </div>
+                    <div class="col-md-4">
+                      <label class="form-label small fw-semibold text-secondary" for="out-grade">年级</label>
+                      <select class="form-select" id="out-grade" name="grade" required>
+                        <option value="" selected disabled>请选择年级</option>
+                        <option>2024</option>
+                        <option>2025</option>
+                        <option>2023</option>
+                        <option>2022</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="row g-3 mt-1">
+                    <div class="col-md-6">
+                      <label class="form-label small fw-semibold text-secondary" for="out-academic-year">志愿活动所处学年</label>
+                      <select class="form-select" id="out-academic-year" name="academic_year" required>
+                        <option value="" selected disabled>请选择学年</option>
+                        <option>25-26学年</option>
+                        <option>24-25学年</option>
+                        <option>23-24学年</option>
+                        <option>22-23学年</option>
+                      </select>
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label small fw-semibold text-secondary" for="out-duration">时长（数字）</label>
+                      <input type="number" min="0" step="1" class="form-control" id="out-duration" name="duration" required placeholder="例如：2" />
+                    </div>
+                  </div>
+
+                  <div class="row g-3 mt-1">
+                    <div class="col-md-6">
+                      <label class="form-label small fw-semibold text-secondary" for="out-item-count">活动项数（数字）</label>
+                      <input type="number" min="0" step="1" class="form-control" id="out-item-count" name="item_count" required placeholder="例如：1" />
+                    </div>
+                    <div class="col-md-6">
+                      <label class="form-label small fw-semibold text-secondary" for="out-activity-name">活动名称</label>
+                      <input type="text" class="form-control" id="out-activity-name" name="activity_name" required placeholder="请输入活动名称" autocomplete="off" />
+                    </div>
+                  </div>
+
+                  <div class="mt-3">
+                    <label class="form-label small fw-semibold text-secondary" for="out-description">活动描述</label>
+                    <textarea class="form-control" id="out-description" name="description" rows="3" required placeholder="请描述活动内容（用于证明志愿性质）"></textarea>
+                  </div>
+
+          <div class="mt-3">
+            <label class="form-label small fw-semibold text-secondary" for="out-proof">证明图片（最多9张）</label>
+                    <input type="file" class="form-control" id="out-proof" name="proof" required accept=".png,.jpg,.jpeg,.gif,.webp" multiple />
+                    <div class="form-text">可选择公章证明或志愿平台截图等，支持多选（9张以内）</div>
+                  </div>
+
+                  <div class="mt-3">
+                    <label class="form-label small fw-semibold text-secondary" for="out-photo">本人活动照片（最多9张）</label>
+                    <input type="file" class="form-control" id="out-photo" name="photo" required accept=".png,.jpg,.jpeg,.gif,.webp" multiple />
+                    <div class="form-text">用于证明本人参与并呈现活动内容，支持多选（9张以内）</div>
+                  </div>
+
+                  <div class="mt-3">
+                    <label class="form-label small fw-semibold text-secondary" for="out-wechat">微信号联系方式</label>
+                    <input type="text" class="form-control" id="out-wechat" name="wechat" required placeholder="请输入微信号" autocomplete="off" />
+                  </div>
+
+                  <div class="mt-3">
+                    <label class="form-label small fw-semibold text-secondary" for="out-note">备注（选填）</label>
+                    <textarea class="form-control" id="out-note" name="note" rows="3" placeholder="可填写补充说明"></textarea>
+                  </div>
+
+                  <div class="d-flex flex-wrap align-items-center gap-3 mt-4">
+                    <button type="submit" class="btn btn-primary btn-lg px-4" id="btn-submit-external">提交校外补录</button>
+                    <span id="external-msg" class="small text-secondary min-h-msg" role="status"></span>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4) 管理员子界面 -->
+      <div id="screen-admin" class="d-none">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <div>
+            <h2 class="h4 fw-bold text-dark mb-1">管理员后台</h2>
+            <p class="text-secondary mb-0 small">上传总表与导出补录汇总</p>
+          </div>
+          <div class="d-flex gap-2">
+            <button class="btn btn-outline-danger rounded-pill d-none" id="btn-admin-logout" type="button">退出登录</button>
+            <button class="btn btn-outline-secondary rounded-pill" id="btn-back-home-3" type="button">返回上一级</button>
+          </div>
+        </div>
+
+        <div id="admin-login-box" class="card card-shell mb-4">
+          <div class="card-header py-3">
+            <div class="d-flex align-items-start gap-3">
+              <span class="step-dot">A</span>
+              <div>
+                <h3 class="h6 mb-1 fw-bold">管理员登录</h3>
+                <p class="small text-danger mb-0 mt-1"><i class="bi bi-info-circle me-1"></i>温馨提示：如功能不能正常使用，可尝试退出并重新登录。</p>
+              </div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="form-label small fw-semibold text-secondary" for="admin-username">账号</label>
+                <input type="text" class="form-control" id="admin-username" autocomplete="username" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-semibold text-secondary" for="admin-password">密码</label>
+                <input type="password" class="form-control" id="admin-password" autocomplete="current-password" />
+              </div>
+            </div>
+            <div class="d-flex flex-wrap align-items-center gap-3 mt-4">
+              <button type="button" class="btn btn-primary btn-lg px-4" id="btn-admin-login">登录</button>
+              <span class="small text-secondary min-h-msg" id="admin-msg" role="status"></span>
+            </div>
+          </div>
+        </div>
+
+        <div id="admin-panel" class="d-none">
+          <!-- 管理员登录后的温馨提示 -->
+          <div class="alert alert-danger border-0 shadow-sm mb-4 py-2 rounded-3">
+            <div class="d-flex align-items-center gap-2">
+              <i class="bi bi-info-circle-fill fs-5 text-danger"></i>
+              <div class="small fw-bold">温馨提示：如功能不能正常使用，可尝试退出并重新登录。</div>
+            </div>
+          </div>
+
+          <div class="row g-4">
+            <!-- 功能入口 1: 时长录入 -->
+            <div class="col-md-4">
+              <div class="card card-shell h-100">
+                <div class="card-header py-3">
+                  <div class="d-flex align-items-start gap-3">
+                    <span class="step-dot">录</span>
+                    <div>
+                      <h3 class="h6 mb-1 fw-bold">时长录入</h3>
+                      <p class="small text-secondary mb-0">批量追加活动时长到总表</p>
+                    </div>
+                  </div>
+                </div>
+                <div class="card-body d-flex flex-column justify-content-center">
+                  <p class="small text-secondary mb-4">通过“待录入表”与“原时长总表”匹配，自动在总表末尾追加新活动列数据。</p>
+                  <button type="button" class="btn btn-info btn-lg w-100 mt-auto text-white" id="btn-go-admin-import">进入时长录入</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 功能入口 2: 下载最新时长总表 (新功能) -->
+            <div class="col-md-4">
+              <div class="card card-shell h-100">
+                <div class="card-header py-3">
+                  <div class="d-flex align-items-start gap-3">
+                    <span class="step-dot">↓</span>
+                    <div>
+                      <h3 class="h6 mb-1 fw-bold">下载最新时长总表</h3>
+                      <p class="small text-secondary mb-0">下载已上传的各年级最新总表</p>
+                    </div>
+                  </div>
+                </div>
+                <div class="card-body">
+                  <div id="master-files-list" class="small mb-3">
+                    <div class="text-center py-2"><div class="spinner-border spinner-border-sm text-secondary"></div></div>
+                  </div>
+                  <div class="mt-auto">
+                    <select class="form-select form-select-sm mb-2" id="download-grade-select">
+                      <option value="" selected disabled>选择年级下载</option>
+                      <option value="2022">2022级</option>
+                      <option value="2023">2023级</option>
+                      <option value="2024">2024级</option>
+                      <option value="2025">2025级</option>
+                    </select>
+                    <button type="button" class="btn btn-primary w-100" id="btn-admin-download-master">下载选定年级表</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 功能入口 3: 补录记录处理 -->
+            <div class="col-md-4">
+              <div class="card card-shell h-100">
+                <div class="card-header py-3">
+                  <div class="d-flex align-items-start gap-3">
+                    <span class="step-dot">理</span>
+                    <div>
+                      <h3 class="h6 mb-1 fw-bold">补录记录处理</h3>
+                      <p class="small text-secondary mb-0">查看、导出及处理补录记录</p>
+                    </div>
+                  </div>
+                </div>
+                <div class="card-body d-flex flex-column justify-content-center">
+                  <p class="small text-secondary mb-4">进入后可在线查看同学提交的补录申请，支持批量修改状态、删除及导出汇总表。</p>
+                  <button type="button" class="btn btn-primary btn-lg w-100 mt-auto" id="btn-go-admin-topup">进入处理界面</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 功能入口 4: 22、23级表格快捷合并 -->
+            <div class="col-md-4">
+              <div class="card card-shell h-100">
+                <div class="card-header py-3">
+                  <div class="d-flex align-items-start gap-3">
+                    <span class="step-dot">并</span>
+                    <div>
+                      <h3 class="h6 mb-1 fw-bold">22、23级表格快捷合并</h3>
+                      <p class="small text-secondary mb-0">进入合并工具页面</p>
+                    </div>
+                  </div>
+                </div>
+                <div class="card-body d-flex flex-column justify-content-center">
+                  <p class="small text-secondary mb-4">自动提取并合并上传的 22 级或 23 级 Excel 中的所有分表数据，生成单一汇总表。</p>
+                  <button type="button" class="btn btn-success btn-lg w-100 mt-auto" id="btn-go-admin-merge">进入合并工具</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- 功能入口 5: 上传公示时长总表 -->
+            <div class="col-md-4">
+              <div class="card card-shell h-100">
+                <div class="card-header py-3">
+                  <div class="d-flex align-items-start gap-3">
+                    <span class="step-dot">↑</span>
+                    <div>
+                      <h3 class="h6 mb-1 fw-bold">上传公示时长总表</h3>
+                      <p class="small text-secondary mb-0">上传最新时长表到公示查询平台</p>
+                    </div>
+                  </div>
+                </div>
+                <div class="card-body">
+                  <!-- 高级管理员登录界面（“门”） -->
+                  <div id="senior-admin-login-box">
+                    <p class="small text-danger mb-3"><i class="bi bi-shield-lock-fill me-1"></i>该功能需要高级管理员权限</p>
+                    <div class="mb-3">
+                      <label class="form-label small fw-semibold text-secondary" for="senior-username">高级账号</label>
+                      <input type="text" class="form-control form-control-sm" id="senior-username" autocomplete="username" />
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label small fw-semibold text-secondary" for="senior-password">高级密码</label>
+                      <input type="password" class="form-control form-control-sm" id="senior-password" autocomplete="current-password" />
+                    </div>
+                    <button type="button" class="btn btn-outline-danger w-100 btn-sm" id="btn-senior-login">验证身份</button>
+                    <div class="mt-2 text-center">
+                      <span class="small text-danger min-h-msg" id="senior-msg" role="status"></span>
+                    </div>
+                  </div>
+
+                  <!-- 验证通过后显示的上传表单 -->
+                  <div id="senior-admin-panel" class="d-none">
+                    <div class="mb-3">
+                      <label class="form-label small fw-semibold text-secondary" for="master-grade">适用年级</label>
+                      <select class="form-select" id="master-grade">
+                        <option value="" selected disabled>请选择年级</option>
+                        <option value="2022">2022级</option>
+                        <option value="2023">2023级</option>
+                        <option value="2024">2024级</option>
+                        <option value="2025">2025级</option>
+                      </select>
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label small fw-semibold text-secondary" for="master-file">选择 Excel（.xlsx）</label>
+                      <input type="file" class="form-control" id="master-file" accept=".xlsx" />
+                    </div>
+                    <button type="button" class="btn btn-primary w-100 mt-2" id="btn-upload-master">上传并保存</button>
+                    <div class="mt-2 text-center">
+                      <span class="small text-secondary min-h-msg" id="upload-msg" role="status"></span>
+                    </div>
+                    <button type="button" class="btn btn-link btn-sm w-100 mt-2 text-secondary text-decoration-none" id="btn-senior-logout">退出高级权限</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4.5) 补录记录处理次界面 -->
+      <div id="screen-admin-topup" class="d-none">
+          <div class="d-flex align-items-center justify-content-between mb-3">
+            <div>
+              <h2 class="h4 fw-bold text-dark mb-1">补录记录处理</h2>
+              <p class="text-secondary mb-0 small">查看、导出及批量处理同学提交的补录信息</p>
+            </div>
+            <button class="btn btn-outline-secondary rounded-pill" id="btn-back-admin-topup" type="button">返回管理员后台</button>
+          </div>
+
+          <div class="card card-shell mb-4">
+            <div class="card-header py-3">
+              <div class="d-flex align-items-start gap-3">
+                <span class="step-dot">↓</span>
+                <div>
+                  <h3 class="h6 mb-1 fw-bold">导出补录记录汇总</h3>
+                  <p class="small text-secondary mb-0">下载“学生时长补录汇总.xlsx”</p>
+                </div>
+              </div>
+            </div>
+            <div class="card-body">
+              <button type="button" class="btn btn-primary btn-lg px-4" id="btn-download-topup">导出补录记录汇总</button>
+              <span class="small text-secondary min-h-msg ms-3" id="download-msg" role="status"></span>
+            </div>
+          </div>
+
+          <div class="card card-shell mt-4">
+            <div class="card-header py-3">
+              <div class="d-flex align-items-start gap-3">
+                <span class="step-dot">查</span>
+                <div>
+                  <h3 class="h6 mb-1 fw-bold">查看补录记录</h3>
+                  <p class="small text-secondary mb-0">预览并标记现有补录记录</p>
+                </div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="d-flex flex-wrap align-items-center gap-3 mb-3">
+                <button type="button" class="btn btn-primary" id="btn-load-records">刷新记录</button>
+                <div class="btn-group d-none" id="batch-ops-group">
+                  <button type="button" class="btn btn-outline-success dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                    批量修改状态
+                  </button>
+                  <ul class="dropdown-menu">
+                    <li><a class="dropdown-item batch-status-change" data-status="已反馈" href="javascript:void(0)">设为：已反馈</a></li>
+                    <li><a class="dropdown-item batch-status-change" data-status="已录入" href="javascript:void(0)">设为：已录入</a></li>
+                    <li><a class="dropdown-item batch-status-change" data-status="待处理" href="javascript:void(0)">设为：待处理</a></li>
+                  </ul>
+                  <button type="button" class="btn btn-outline-danger" id="btn-batch-delete">批量删除</button>
+                </div>
+                <span class="small text-secondary min-h-msg" id="records-msg" role="status"></span>
+              </div>
+              <div class="accordion" id="recordsAccordion">
+                <div class="accordion-item">
+                  <h2 class="accordion-header">
+                    <button
+                      class="accordion-button"
+                      type="button"
+                      data-bs-toggle="collapse"
+                      data-bs-target="#records-collapse-internal"
+                      aria-expanded="true"
+                      aria-controls="records-collapse-internal"
+                    >
+                      校内补录记录
+                    </button>
+                  </h2>
+                  <div
+                    id="records-collapse-internal"
+                    class="accordion-collapse collapse show"
+                    data-bs-parent="#recordsAccordion"
+                  >
+                    <div class="accordion-body">
+                      <div class="table-responsive rounded-3 border d-none" id="records-wrap-internal">
+                        <table class="table table-sm table-hover mb-0 align-middle">
+                          <thead class="table-light">
+                            <tr>
+                              <th style="width: 40px;">
+                                <input type="checkbox" class="form-check-input select-all" data-target="internal" />
+                              </th>
+                              <th>姓名</th>
+                              <th>班级</th>
+                              <th>年级</th>
+                              <th>学年</th>
+                              <th>活动名称</th>
+                              <th>时长</th>
+                              <th>证明文件</th>
+                              <th>微信号</th>
+                              <th>处理状态</th>
+                              <th>管理员备注</th>
+                              <th>操作</th>
+                            </tr>
+                          </thead>
+                          <tbody id="records-body-internal"></tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="accordion-item">
+                  <h2 class="accordion-header">
+                    <button
+                      class="accordion-button collapsed"
+                      type="button"
+                      data-bs-toggle="collapse"
+                      data-bs-target="#records-collapse-external"
+                      aria-expanded="false"
+                      aria-controls="records-collapse-external"
+                    >
+                      校外补录记录
+                    </button>
+                  </h2>
+                  <div
+                    id="records-collapse-external"
+                    class="accordion-collapse collapse"
+                    data-bs-parent="#recordsAccordion"
+                  >
+                    <div class="accordion-body">
+                      <div class="table-responsive rounded-3 border d-none" id="records-wrap-external">
+                        <table class="table table-sm table-hover mb-0 align-middle">
+                          <thead class="table-light">
+                            <tr>
+                              <th style="width: 40px;">
+                                <input type="checkbox" class="form-check-input select-all" data-target="external" />
+                              </th>
+                              <th>姓名</th>
+                              <th>班级</th>
+                              <th>年级</th>
+                              <th>学年</th>
+                              <th>活动名称</th>
+                              <th>时长</th>
+                              <th>活动项数</th>
+                              <th>证明文件</th>
+                              <th>活动照片</th>
+                              <th>微信号</th>
+                              <th>处理状态</th>
+                              <th>管理员备注</th>
+                              <th>操作</th>
+                            </tr>
+                          </thead>
+                          <tbody id="records-body-external"></tbody>
+                        </table>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5) 表格合并次界面 -->
+      <div id="screen-admin-merge" class="d-none">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <div>
+            <h2 class="h4 fw-bold text-dark mb-1">表格快捷合并工具</h2>
+            <p class="text-secondary mb-0 small">上传单年级总表，自动合并内含的所有分表数据</p>
+          </div>
+          <button class="btn btn-outline-secondary rounded-pill" id="btn-back-admin-merge" type="button">返回管理员后台</button>
+        </div>
+
+        <div class="card card-shell mb-4">
+          <div class="card-header py-3">
+            <div class="d-flex align-items-start gap-3">
+              <span class="step-dot">并</span>
+              <div>
+                <h3 class="h6 mb-1 fw-bold">上传表格进行合并</h3>
+                <p class="small text-secondary mb-0">快捷生成可用于制作接龙小程序快捷查询的合并后总表</p>
+              </div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="alert alert-info border-0 mb-4 py-3">
+              <h4 class="h6 fw-bold mb-2 text-primary"><i class="bi bi-info-circle-fill me-2"></i>功能用途</h4>
+              <p class="small mb-0 text-secondary">本工具可自动提取并合并 22 级或 23 级 Excel 中的所有分表数据，生成单一汇总表，方便制作接龙小程序汇总。</p>
+            </div>
+            
+            <div class="mb-4">
+              <label class="form-label small fw-semibold text-secondary" for="merge-file-single">选择待合并的 Excel 总表 (.xlsx)</label>
+              <input type="file" class="form-control form-control-lg" id="merge-file-single" accept=".xlsx" />
+              <div class="form-text mt-2">支持 2022 级、2023 级或其他包含多分表的时长统计文件。</div>
+            </div>
+
+            <div class="d-flex flex-wrap align-items-center gap-3">
+              <button type="button" class="btn btn-success btn-lg px-5" id="btn-merge-grades">开始合并并下载</button>
+              <span class="small text-secondary min-h-msg" id="merge-msg" role="status"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 6) 时长录入次界面 -->
+      <div id="screen-admin-import" class="d-none">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <div>
+            <h2 class="h4 fw-bold text-dark mb-1">时长录入工具</h2>
+            <p class="text-secondary mb-0 small">批量匹配姓名并追加时长到总表新列</p>
+          </div>
+          <button class="btn btn-outline-secondary rounded-pill" id="btn-back-admin-import" type="button">返回管理员后台</button>
+        </div>
+
+        <div class="card card-shell mb-4 border-danger shadow-sm">
+          <div class="card-body">
+            <h4 class="h6 fw-bold text-danger mb-3"><i class="bi bi-exclamation-octagon-fill me-2"></i>待录入时长表：标准格式要求</h4>
+            <div class="row g-3">
+              <div class="col-md-6">
+                <div class="p-3 bg-light rounded-3 border">
+                  <div class="small fw-bold text-dark mb-2">1. 必须包含的列名</div>
+                  <ul class="small text-secondary mb-0 ps-3">
+                    <li><strong class="text-primary">姓名</strong>：用于在总表中匹配学生。</li>
+                    <li><strong class="text-primary">时长</strong>：本次活动的志愿时长。</li>
+                    <li><strong class="text-primary">年级</strong>：匹配失败时用于提示。</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="p-3 bg-light rounded-3 border">
+                  <div class="small fw-bold text-dark mb-2">2. 录入规则提醒（重要）</div>
+                  <ul class="small text-secondary mb-0 ps-3">
+                    <li><strong class="text-danger">命名规范</strong>：请将文件命名为“<span class="text-danger fw-bold">活动名称.xlsx</span>”（系统将自动提取文件名作为总表的新列标题）。</li>
+                    <li><strong class="text-danger">Sheet 规范</strong>：待录入时长表的所有有效信息应包含在<span class="text-danger fw-bold">第一张 Sheet</span> 中（系统仅读取第一张 Sheet）。</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card card-shell mb-4 border-primary">
+          <div class="card-header py-3 bg-light">
+            <div class="d-flex align-items-start gap-3">
+              <span class="step-dot bg-primary">录</span>
+              <div>
+                <h3 class="h6 mb-1 fw-bold">时长录入</h3>
+                <p class="small text-secondary mb-0">各年级统一：遍历总表全部工作表，按姓名匹配并追加新活动列</p>
+              </div>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="alert alert-primary border-0 mb-4 py-3">
+              <h4 class="h6 fw-bold mb-2 text-primary"><i class="bi bi-layers-fill me-2"></i>功能说明</h4>
+              <p class="small mb-0 text-secondary">系统将自动遍历总表中的所有分表，按姓名匹配并录入时长。</p>
+            </div>
+
+            <div class="row g-4 mb-4">
+              <div class="col-md-6">
+                <label class="form-label small fw-semibold text-secondary" for="import-file-pending">文件 A：待录入时长表 (.xlsx)</label>
+                <input type="file" class="form-control" id="import-file-pending" accept=".xlsx" />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label small fw-semibold text-secondary" for="import-file-master">文件 B：原时长总表 (.xlsx)</label>
+                <input type="file" class="form-control" id="import-file-master" accept=".xlsx" />
+              </div>
+            </div>
+
+            <div class="d-flex flex-wrap align-items-center gap-3">
+              <button type="button" class="btn btn-primary btn-lg px-5" onclick="doImportDurations()">执行录入</button>
+              <button type="button" class="btn btn-success btn-lg px-5 d-none download-imported-btn" id="download-imported-btn">下载更新后的总表</button>
+              <span class="small text-secondary min-h-msg" id="import-msg" role="status"></span>
+            </div>
+          </div>
+        </div>
+
+        <div id="import-failed-wrap" class="d-none mb-4">
+          <div class="alert alert-warning border-0 py-3">
+            <h4 class="h6 fw-bold mb-2 text-warning"><i class="bi bi-exclamation-triangle-fill me-2"></i>录入异常：以下姓名在总表中未找到</h4>
+            <div id="import-failed-names" class="small text-dark fw-bold" style="word-break: break-all;"></div>
+            <p class="small mt-2 mb-0 text-secondary">以上人员的时长未被录入，请手动核对并录入至其对应年级总表。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="border-top bg-white py-3 mt-auto">
+    <div class="container main-col text-center small text-muted">数据以服务端的 Excel 文件为准</div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+
+  <script>
+    // 生产环境：自动使用当前站点域名作为 API 地址（同源）。
+    // 本地直接 file:// 打开时，回退到本机后端地址，便于开发调试。
+    var API_BASE = (function () {
+      if (window.location.protocol === "file:") {
+        return "http://127.0.0.1:8000";
+      }
+      return window.location.origin;
+    })();
+
+    function escapeHtml(s) {
+      return String(s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/\"/g, "&quot;");
+    }
+
+    function parseApiError(errJson) {
+      if (!errJson) return "操作失败";
+      if (errJson.detail && typeof errJson.detail === "object" && errJson.detail.message) return errJson.detail.message;
+      if (errJson.detail && typeof errJson.detail === "string") return errJson.detail;
+      if (errJson.message) return errJson.message;
+      return "操作失败";
+    }
+
+    var currentQueryGrade = ""; // 当前正在查询的年级
+    var isSpecialQuery = false; // 是否是大四达标查询
+    
+    // 存储各年级的查询状态：{ grade: { name: "", id: "", msg: "", html: "", hasData: false } }
+    var searchState = {
+      "2022": { name: "", id: "", msg: "", html: "", hasData: false },
+      "2023": { name: "", id: "", msg: "", html: "", hasData: false },
+      "2024": { name: "", id: "", msg: "", html: "", hasData: false },
+      "2025": { name: "", id: "", msg: "", html: "", hasData: false }
+    };
+
+    function saveCurrentSearchState() {
+      if (!currentQueryGrade || isSpecialQuery) return;
+      var qName = document.getElementById("q-name");
+      var qId = document.getElementById("q-id");
+      var searchMsg = document.getElementById("search-msg");
+      var tbody = document.getElementById("result-body");
+      var tableWrap = document.getElementById("table-wrap");
+
+      searchState[currentQueryGrade] = {
+        name: qName ? qName.value : "",
+        id: qId ? qId.value : "",
+        msg: searchMsg ? searchMsg.textContent : "",
+        html: tbody ? tbody.innerHTML : "",
+        hasData: tableWrap ? !tableWrap.classList.contains("d-none") : false
+      };
+    }
+
+    function restoreSearchState(grade) {
+      if (!grade || isSpecialQuery) {
+        // 大四达标查询不走持久化逻辑，直接清空或保持
+        if (isSpecialQuery) {
+          var qName = document.getElementById("q-name");
+          var qId = document.getElementById("q-id");
+          if (qName) qName.value = "";
+          if (qId) qId.value = "";
+          if (window.resetResult) window.resetResult();
+        }
+        return;
+      };
+      var state = searchState[grade];
+      var qName = document.getElementById("q-name");
+      var qId = document.getElementById("q-id");
+      var searchMsg = document.getElementById("search-msg");
+      var tbody = document.getElementById("result-body");
+      var tableWrap = document.getElementById("table-wrap");
+
+      if (qName) qName.value = state.name || "";
+      if (qId) qId.value = state.id || "";
+      if (searchMsg) searchMsg.textContent = state.msg || "";
+      if (tbody) tbody.innerHTML = state.html || "";
+      if (tableWrap) {
+        if (state.hasData) tableWrap.classList.remove("d-none");
+        else tableWrap.classList.add("d-none");
+      }
+    }
+
+    function showScreen(id) {
+      ["home", "grade-select", "query", "topup", "admin", "admin-merge", "admin-topup", "admin-import"].forEach(function (s) {
+        var el = document.getElementById("screen-" + s);
+        if (el) el.classList.toggle("d-none", s !== id);
+      });
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    // 首页切换按钮
+    (function () {
+      var btnGoQuery = document.getElementById("btn-go-query");
+      var btnGoSpecialQuery = document.getElementById("btn-go-special-query");
+      var btnGoTopup = document.getElementById("btn-go-topup");
+      var btnBack1 = document.getElementById("btn-back-home-1");
+      var btnBack2 = document.getElementById("btn-back-home-2");
+      var btnBack3 = document.getElementById("btn-back-home-3");
+      var btnBack4 = document.getElementById("btn-back-admin-merge");
+      var btnBack5 = document.getElementById("btn-back-admin-topup");
+      var btnBack6 = document.getElementById("btn-back-admin-import");
+      var btnBackGrade = document.getElementById("btn-back-home-grade");
+      var adminEntry = document.getElementById("admin-entry");
+      var btnGoMerge = document.getElementById("btn-go-admin-merge");
+      var btnGoTopupProc = document.getElementById("btn-go-admin-topup");
+      var btnGoImport = document.getElementById("btn-go-admin-import");
+      var latestUploadHint = document.getElementById("latest-upload-hint");
+
+      function refreshLatestUploadHint() {
+        if (!latestUploadHint) return;
+        if (!currentQueryGrade) {
+          latestUploadHint.textContent = "最新表格上传日期：暂无";
+          return;
+        }
+        latestUploadHint.textContent = "最新表格上传日期：加载中...";
+        fetch(API_BASE + "/api/master-last-upload?grade=" + encodeURIComponent(currentQueryGrade))
+          .then(function(res) {
+            return res.json().then(function(json) { return { res: res, json: json }; });
+          })
+          .then(function(pair) {
+            if (!pair.res.ok || !pair.json || pair.json.ok === false) throw new Error("load failed");
+            var text = pair.json.exists ? pair.json.last_uploaded : "尚未上传";
+            latestUploadHint.textContent = "最新表格上传日期：" + text;
+          })
+          .catch(function() {
+            latestUploadHint.textContent = "最新表格上传日期：获取失败";
+          });
+      }
+
+      // 刷新最新上传日期提示
+      function refreshLatestUploadHint() {
+        var hintEl = document.getElementById("latest-upload-hint");
+        if (!hintEl || !currentQueryGrade) return;
+        
+        hintEl.textContent = "最新表格上传日期：加载中...";
+        fetch(API_BASE + "/api/public/master-file-status?grade=" + currentQueryGrade)
+          .then(function(res) { return res.json(); })
+          .then(function(json) {
+            if (json.ok) {
+              hintEl.textContent = "最新表格上传日期：" + json.last_uploaded;
+            } else {
+              hintEl.textContent = "最新表格上传日期：获取失败";
+            }
+          })
+          .catch(function() {
+            hintEl.textContent = "最新表格上传日期：获取失败";
+          });
+      }
+
+      btnGoQuery && btnGoQuery.addEventListener("click", function () { 
+        isSpecialQuery = false;
+        showScreen("grade-select"); 
+      });
+      btnGoSpecialQuery && btnGoSpecialQuery.addEventListener("click", function() {
+        isSpecialQuery = true;
+        currentQueryGrade = "2022";
+        var titleEl = document.querySelector("#screen-query h2");
+        if (titleEl) titleEl.textContent = "大四时长及项数达标查询";
+        
+        // 显示下载按钮
+        var dlBtn = document.getElementById("btn-download-master-query");
+        if (dlBtn) dlBtn.classList.remove("d-none");
+        var dlHint = document.getElementById("download-master-hint");
+        if (dlHint) dlHint.classList.remove("d-none");
+        
+        refreshLatestUploadHint();
+        showScreen("query");
+      });
+      btnGoTopup && btnGoTopup.addEventListener("click", function () { 
+        alert("该功能暂未开放，请转至补录接龙小程序");
+      });
+      btnBack1 && btnBack1.addEventListener("click", function () { 
+        saveCurrentSearchState();
+        // 隐藏下载提示
+        var dlHint = document.getElementById("download-master-hint");
+        if (dlHint) dlHint.classList.add("d-none");
+        
+        if (isSpecialQuery) {
+          showScreen("home");
+        } else {
+          showScreen("grade-select"); 
+        }
+      }); 
+      btnBack2 && btnBack2.addEventListener("click", function () { 
+        showScreen("home"); 
+      });
+      btnBack3 && btnBack3.addEventListener("click", function () { 
+        showScreen("home"); 
+      });
+      btnBack4 && btnBack4.addEventListener("click", function () { 
+        showScreen("admin"); 
+      });
+      btnBack5 && btnBack5.addEventListener("click", function () { 
+        showScreen("admin"); 
+      });
+      btnBack6 && btnBack6.addEventListener("click", function () { 
+        showScreen("admin"); 
+      });
+      btnBackGrade && btnBackGrade.addEventListener("click", function () { 
+        showScreen("home"); 
+      });
+      adminEntry && adminEntry.addEventListener("click", function (e) {
+        e.preventDefault();
+        showScreen("admin");
+        if (window.refreshAdminAuth) window.refreshAdminAuth(); // 进入管理员界面时检查一次登录状态
+      });
+      btnGoMerge && btnGoMerge.addEventListener("click", function () {
+        showScreen("admin-merge");
+      });
+      btnGoTopupProc && btnGoTopupProc.addEventListener("click", function () {
+        showScreen("admin-topup");
+        if (window.loadRecords) window.loadRecords(); // 进入时自动加载一次
+      });
+      btnGoImport && btnGoImport.addEventListener("click", function () {
+        showScreen("admin-import");
+      });
+
+      // 年级选择逻辑
+      document.querySelectorAll(".btn-grade").forEach(function(btn) {
+        btn.addEventListener("click", function(e) {
+          currentQueryGrade = this.getAttribute("data-grade");
+          var titleEl = document.querySelector("#screen-query h2");
+          if (titleEl) titleEl.textContent = currentQueryGrade + "级 时长查询";
+          
+          // 显示/隐藏下载按钮与提示
+          var dlBtn = document.getElementById("btn-download-master-query");
+          var dlHint = document.getElementById("download-master-hint");
+          if (dlBtn) {
+            if (currentQueryGrade === "2022" || currentQueryGrade === "2023") {
+              dlBtn.classList.remove("d-none");
+              if (dlHint) dlHint.classList.remove("d-none");
+            } else {
+              dlBtn.classList.add("d-none");
+              if (dlHint) dlHint.classList.add("d-none");
+            }
+          }
+          
+          refreshLatestUploadHint();
+          refreshLatestUploadHint();
+          showScreen("query");
+          restoreSearchState(currentQueryGrade);
+        });
+      });
+
+      // 查询页面的下载源文件逻辑
+      var btnDownloadMasterQuery = document.getElementById("btn-download-master-query");
+      btnDownloadMasterQuery && btnDownloadMasterQuery.addEventListener("click", function() {
+        if (currentQueryGrade === "2022" || currentQueryGrade === "2023") {
+          window.location.href = API_BASE + "/api/download-master-raw?grade=" + currentQueryGrade;
+        }
+      });
+    })();
+
+    // 时长查询（姓名 + 学号必填）
+    (function () {
+      var qName = document.getElementById("q-name");
+      var qId = document.getElementById("q-id");
+      var btnDoSearch = document.getElementById("btn-do-search");
+      var searchMsg = document.getElementById("search-msg");
+      var tableWrap = document.getElementById("table-wrap");
+      var tbody = document.getElementById("result-body");
+      var emptyHint = document.getElementById("empty-hint");
+
+      function resetResult() {
+        if (searchMsg) searchMsg.textContent = "";
+        if (tbody) tbody.innerHTML = "";
+        if (tableWrap) tableWrap.classList.add("d-none");
+        if (emptyHint) emptyHint.style.display = "none";
+      }
+      window.resetResult = resetResult;
+
+      btnDoSearch && btnDoSearch.addEventListener("click", function () {
+        resetResult();
+        var name = (qName && qName.value || "").trim();
+        var studentId = (qId && qId.value || "").trim();
+        if (!name || !studentId) {
+          if (searchMsg) searchMsg.textContent = "请同时输入姓名与学号";
+          return;
+        }
+
+        var url = API_BASE + "/api/search?name=" + encodeURIComponent(name) + "&student_id=" + encodeURIComponent(studentId) + "&grade=" + encodeURIComponent(currentQueryGrade);
+        fetch(url, { method: "GET", headers: { Accept: "application/json" } })
+          .then(function (res) {
+            return res.json().then(function (json) { return { res: res, json: json }; });
+          })
+          .then(function (pair) {
+            if (!pair.res.ok) {
+              if (searchMsg) searchMsg.textContent = parseApiError(pair.json);
+              return;
+            }
+            var rows = (pair.json && pair.json.data) ? pair.json.data : [];
+            var tbody = document.getElementById("result-body");
+            var thead = document.querySelector("#result-table thead tr");
+            var tableWrap = document.getElementById("table-wrap");
+            var emptyHint = document.getElementById("empty-hint");
+            if (tbody) tbody.innerHTML = "";
+            if (!rows || rows.length === 0) {
+              if (searchMsg) searchMsg.textContent = "未找到匹配记录";
+              if (emptyHint) emptyHint.style.display = "block";
+              if (tableWrap) tableWrap.classList.add("d-none");
+              return;
+            }
+            if (searchMsg) searchMsg.textContent = "共 " + rows.length + " 条结果";
+            if (emptyHint) emptyHint.style.display = "none";
+
+            // 动态调整表头
+            var hasSheet = rows.some(function(r) { return r["分表名"]; });
+            var isDetailedGrade = (currentQueryGrade === "2024" || currentQueryGrade === "2025");
+            if (thead) {
+              var headerHtml = '<th class="ps-3">总时长</th><th>项数</th>';
+              if (hasSheet) headerHtml += '<th>来源分表</th>';
+              if (isDetailedGrade) headerHtml += '<th>项目及具体时长</th>';
+              thead.innerHTML = headerHtml;
+            }
+
+            rows.forEach(function (row) {
+              var tr = document.createElement("tr");
+              var totalTime = parseFloat(row["总时长"] || 0);
+              var totalItems = parseInt(row["项数"] || 0);
+              
+              var timeCell = "<td>" + escapeHtml(String(totalTime)) + "</td>";
+              var itemsCell = "<td>" + escapeHtml(String(totalItems)) + "</td>";
+              
+              // 大四达标校验逻辑
+              if (isSpecialQuery && currentQueryGrade === "2022") {
+                  var timeOk = totalTime >= 32;
+                  var itemsOk = totalItems >= 8;
+                
+                timeCell = '<td>' + escapeHtml(String(totalTime)) + 
+                           ' <span class="badge ' + (timeOk ? 'bg-success' : 'bg-danger') + ' ms-1">' + 
+                           (timeOk ? '已达标' : '未达标') + '</span></td>';
+                itemsCell = '<td>' + escapeHtml(String(totalItems)) + 
+                            ' <span class="badge ' + (itemsOk ? 'bg-success' : 'bg-danger') + ' ms-1">' + 
+                            (itemsOk ? '已达标' : '未达标') + '</span></td>';
+              }
+
+              var sheetTd = hasSheet ? "<td>" + escapeHtml(row["分表名"] || "-") + "</td>" : "";
+              
+              // 各列数据展示 (针对 2024/2025)
+              var detailTd = "";
+              if (isDetailedGrade) {
+                var acts = row["活动列表"] || [];
+                var detailHtml = '<div class="small">';
+                acts.forEach(function(item) {
+                  if (item && typeof item === "object") {
+                    if (item.type === "header") {
+                      detailHtml += '<div class="mt-2 mb-1 fw-bold text-primary border-bottom border-primary-subtle pb-1">' + escapeHtml(item.title || "") + '</div>';
+                    } else if (item.type === "activity") {
+                      var val = (item.value === null || item.value === undefined) ? "" : String(item.value);
+                      detailHtml += '<div class="mb-1 text-dark">' + escapeHtml((item.name || "") + ': ' + val) + '</div>';
+                    }
+                  } else {
+                    // 兼容旧后端返回的字符串格式
+                    detailHtml += '<div class="mb-1 text-dark">' + escapeHtml(String(item)) + '</div>';
+                  }
+                });
+                detailHtml += '</div>';
+                detailTd = "<td>" + (acts.length > 0 ? detailHtml : '<span class="text-muted italic">（无具体列数据）</span>') + "</td>";
+              }
+
+              tr.innerHTML =
+                timeCell +
+                itemsCell +
+                sheetTd +
+                detailTd;
+              tbody.appendChild(tr);
+            });
+            if (tableWrap) tableWrap.classList.remove("d-none");
+            saveCurrentSearchState();
+          })
+          .catch(function () {
+            if (searchMsg) searchMsg.textContent = "无法连接后端，请确认 API_BASE 与服务已启动";
+          });
+      });
+
+      [qName, qId].forEach(function (el) {
+        el && el.addEventListener("keydown", function (ev) {
+          if (ev.key === "Enter") btnDoSearch && btnDoSearch.click();
+        });
+      });
+    })();
+
+    // 校内补录提交
+    (function () {
+      var form = document.getElementById("internal-form");
+      var msg = document.getElementById("internal-msg");
+      var btn = document.getElementById("btn-submit-internal");
+      if (!form) return;
+
+      function setMsg(t) { if (msg) msg.textContent = t; }
+
+      form.addEventListener("submit", function (ev) {
+        ev.preventDefault();
+        if (btn) btn.disabled = true;
+        setMsg("");
+
+        var durationEl = document.getElementById("in-duration");
+        var duration = (durationEl && durationEl.value != null) ? String(durationEl.value).trim() : "";
+        if (!/^\d+$/.test(duration)) {
+          setMsg("时长必须为数字");
+          if (btn) btn.disabled = false;
+          return;
+        }
+
+        var fd = new FormData(form);
+        fetch(API_BASE + "/api/topup/internal", {
+          method: "POST",
+          body: fd,
+          headers: { Accept: "application/json" }
+        })
+          .then(function (res) {
+            return res.json().then(function (json) { return { res: res, json: json }; });
+          })
+          .then(function (pair) {
+            if (!pair.res.ok) {
+              setMsg(parseApiError(pair.json));
+              return;
+            }
+            setMsg("已上传，青协办公室会定期检查并录入，如证明不符合规定会由微信通知");
+            form.reset();
+          })
+          .catch(function () {
+            setMsg("无法连接后端，请确认 API_BASE 与服务已启动");
+          })
+          .finally(function () {
+            if (btn) btn.disabled = false;
+          });
+      });
+    })();
+
+    // 校外补录提交
+    (function () {
+      var form = document.getElementById("external-form");
+      var msg = document.getElementById("external-msg");
+      var btn = document.getElementById("btn-submit-external");
+      if (!form) return;
+
+      function setMsg(t) { if (msg) msg.textContent = t; }
+
+      form.addEventListener("submit", function (ev) {
+        ev.preventDefault();
+        if (btn) btn.disabled = true;
+        setMsg("");
+
+        var durationEl = document.getElementById("out-duration");
+        var itemCountEl = document.getElementById("out-item-count");
+        var duration = durationEl && durationEl.value != null ? String(durationEl.value).trim() : "";
+        var itemCount = itemCountEl && itemCountEl.value != null ? String(itemCountEl.value).trim() : "";
+        if (!/^\d+$/.test(duration)) {
+          setMsg("时长必须为数字");
+          if (btn) btn.disabled = false;
+          return;
+        }
+        if (!/^\d+$/.test(itemCount)) {
+          setMsg("活动项数必须为数字");
+          if (btn) btn.disabled = false;
+          return;
+        }
+
+        var descriptionEl = document.getElementById("out-description");
+        if (descriptionEl && !String(descriptionEl.value || "").trim()) {
+          setMsg("活动描述为必填项");
+          if (btn) btn.disabled = false;
+          return;
+        }
+
+        var fd = new FormData(form);
+        fetch(API_BASE + "/api/topup/external", {
+          method: "POST",
+          body: fd,
+          headers: { Accept: "application/json" }
+        })
+          .then(function (res) {
+            return res.json().then(function (json) { return { res: res, json: json }; });
+          })
+          .then(function (pair) {
+            if (!pair.res.ok) {
+              setMsg(parseApiError(pair.json));
+              return;
+            }
+            setMsg("已上传，青协办公室会定期检查并录入，如证明不符合规定会由微信通知");
+            form.reset();
+          })
+          .catch(function () {
+            setMsg("无法连接后端，请确认 API_BASE 与服务已启动");
+          })
+          .finally(function () {
+            if (btn) btn.disabled = false;
+          });
+      });
+    })();
+
+    // 管理员登录/上传/导出
+    (function () {
+      var tokenKey = "adminToken";
+      function getToken() {
+        try { return window.localStorage.getItem(tokenKey); } catch (e) { return null; }
+      }
+      function setToken(t) {
+        try { window.localStorage.setItem(tokenKey, t); } catch (e) {}
+      }
+      function clearToken() {
+        try { window.localStorage.removeItem(tokenKey); } catch (e) {}
+      }
+
+      var adminLoginBox = document.getElementById("admin-login-box");
+      var adminPanel = document.getElementById("admin-panel");
+      var adminMsg = document.getElementById("admin-msg");
+      var btnAdminLogin = document.getElementById("btn-admin-login");
+
+      var adminUsername = document.getElementById("admin-username");
+      var adminPassword = document.getElementById("admin-password");
+
+      var masterFile = document.getElementById("master-file");
+      var btnUploadMaster = document.getElementById("btn-upload-master");
+      var uploadMsg = document.getElementById("upload-msg");
+
+      var btnDownloadTopup = document.getElementById("btn-download-topup");
+      var downloadMsg = document.getElementById("download-msg");
+      var btnLoadRecords = document.getElementById("btn-load-records");
+      var btnBatchDelete = document.getElementById("btn-batch-delete");
+      var batchOpsGroup = document.getElementById("batch-ops-group");
+      var recordsMsg = document.getElementById("records-msg");
+      var recordsWrapInternal = document.getElementById("records-wrap-internal");
+      var recordsBodyInternal = document.getElementById("records-body-internal");
+      var recordsWrapExternal = document.getElementById("records-wrap-external");
+      var recordsBodyExternal = document.getElementById("records-body-external");
+
+      var btnLogout = document.getElementById("btn-admin-logout");
+
+      var btnAdminDownloadMaster = document.getElementById("btn-admin-download-master");
+      var downloadGradeSelect = document.getElementById("download-grade-select");
+      var masterFilesList = document.getElementById("master-files-list");
+
+      // 定义全局 refreshAdminAuth 函数以便外部调用
+      window.refreshAdminAuth = function() {
+        if (typeof renderAuthUI === "function") {
+          renderAuthUI();
+        }
+      };
+
+      var token = getToken();
+      var seniorToken = null; // 高级管理员 Token (内存存储即可)
+
+      function loadMasterFilesList() {
+        if (!token || !masterFilesList) return;
+        masterFilesList.innerHTML = '<div class="text-center py-2"><div class="spinner-border spinner-border-sm text-secondary"></div></div>';
+        
+        fetch(API_BASE + "/api/admin/master-files", {
+          method: "GET",
+          headers: { Authorization: "Bearer " + token }
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(json) {
+          if (!json.ok) {
+            masterFilesList.innerHTML = '<div class="text-danger small">加载失败</div>';
+            return;
+          }
+          var html = '<ul class="list-unstyled mb-0">';
+          json.data.forEach(function(item) {
+            html += '<li class="mb-1 d-flex justify-content-between"><span>' + item.grade + '级:</span> <span class="text-secondary">' + item.last_uploaded + '</span></li>';
+          });
+          html += '</ul>';
+          masterFilesList.innerHTML = html;
+        })
+        .catch(function() {
+          masterFilesList.innerHTML = '<div class="text-danger small">加载异常</div>';
+        });
+      }
+
+      function renderAuthUI() {
+        var ok = !!token;
+        if (adminLoginBox) adminLoginBox.classList.toggle("d-none", ok);
+        if (adminPanel) adminPanel.classList.toggle("d-none", !ok);
+        if (btnLogout) btnLogout.classList.toggle("d-none", !ok);
+        
+        if (ok) {
+          loadMasterFilesList();
+        }
+        
+        // 重置高级管理员状态
+        seniorToken = null;
+        var seniorLoginBox = document.getElementById("senior-admin-login-box");
+        var seniorAdminPanel = document.getElementById("senior-admin-panel");
+        if (seniorLoginBox) seniorLoginBox.classList.remove("d-none");
+        if (seniorAdminPanel) seniorAdminPanel.classList.add("d-none");
+        var seniorMsg = document.getElementById("senior-msg");
+        if (seniorMsg) seniorMsg.textContent = "";
+
+        // 解决登录失效问题：如果面板显示但功能不可用，提示重新登录
+        if (ok) {
+          fetch(API_BASE + "/api/admin/topup-records?limit=1", {
+            method: "GET",
+            headers: { Authorization: "Bearer " + token }
+          }).then(function(res) {
+            if (res.status === 401) {
+              if (recordsMsg) recordsMsg.innerHTML = '<span class="text-danger fw-bold">登录已过期，请点击右上方“退出登录”后重新登录</span>';
+              clearToken();
+              token = null;
+              // 再次调用 renderAuthUI 更新 UI 状态
+              renderAuthUI();
+            }
+          }).catch(function(err) {
+            console.warn("Auth check failed (possibly backend down):", err);
+          });
+        }
+
+        if (!ok) {
+          if (adminPanel) adminPanel.classList.add("d-none"); // 额外强制隐藏面板
+          if (adminLoginBox) adminLoginBox.classList.remove("d-none"); // 额外强制显示登录框
+          if (recordsWrapInternal) recordsWrapInternal.classList.add("d-none");
+          if (recordsBodyInternal) recordsBodyInternal.innerHTML = "";
+          if (recordsWrapExternal) recordsWrapExternal.classList.add("d-none");
+          if (recordsBodyExternal) recordsBodyExternal.innerHTML = "";
+          if (recordsMsg) recordsMsg.textContent = "";
+        }
+      }
+
+      renderAuthUI();
+
+      // 定义全局 loadRecords 函数以便外部调用
+      window.loadRecords = function() {
+        if (typeof loadRecords === "function") {
+          loadRecords();
+        }
+      };
+
+      function renderRowsToTable(rows, bodyEl, wrapEl, isExternal) {
+        if (!bodyEl || !wrapEl) return 0;
+        bodyEl.innerHTML = "";
+        if (!rows || rows.length === 0) {
+          wrapEl.classList.add("d-none");
+          return 0;
+        }
+        rows.forEach(function (row) {
+          var proofPath = row["证明文件相对路径"] || "";
+          var photoPath = row["本人活动照片相对路径"] || "";
+          
+          function makeActionHtml(pathStr) {
+            if (!pathStr) return '<span class="text-muted small">无</span>';
+            var paths = pathStr.split(",");
+            var html = '<div class="d-flex flex-wrap gap-1" style="max-width: 150px;">';
+            paths.forEach(function(p, idx) {
+              html += '<div class="btn-group btn-group-sm mb-1">' +
+                      '<button type="button" class="btn btn-outline-primary file-preview p-1" data-rel="' + escapeHtml(p) + '" title="预览图' + (idx+1) + '"><i class="bi bi-image"></i> ' + (idx+1) + '</button>' +
+                      '<button type="button" class="btn btn-outline-secondary file-download p-1" data-rel="' + escapeHtml(p) + '" title="下载图' + (idx+1) + '"><i class="bi bi-download"></i></button>' +
+                      '</div>';
+            });
+            html += '</div>';
+            return html;
+          }
+
+          var proofActions = makeActionHtml(proofPath);
+          var photoActions = makeActionHtml(photoPath);
+
+          var tr = document.createElement("tr");
+          var submitTime = escapeHtml(row["提交时间"] || "");
+          var name = escapeHtml(row["姓名"] || "");
+          var status = escapeHtml(row["处理状态"] || "待处理");
+          var adminNote = escapeHtml(row["管理员备注"] || "");
+          
+          var adminNoteDisplay = adminNote 
+            ? '<div class="admin-note-box p-2 border border-info border-opacity-50 rounded bg-info bg-opacity-10 small text-dark" style="min-width: 150px; max-height: 80px; overflow-y: auto; word-break: break-all;" title="' + adminNote + '">' +
+              '<i class="bi bi-chat-dots me-1 text-info"></i>' + adminNote + '</div>'
+            : '<span class="text-muted small fst-italic text-opacity-50">（未添加备注）</span>';
+          
+          var deleteBtn = '<button type="button" class="btn btn-sm btn-outline-danger record-delete" data-time="' + submitTime + '" data-name="' + name + '">删除</button>';
+          var remarkBtn = '<button type="button" class="btn btn-sm btn-outline-info record-remark" data-time="' + submitTime + '" data-name="' + name + '" data-note="' + adminNote + '">修改备注</button>';
+          
+          var statusSelect = '<select class="form-select form-select-sm record-status-select" data-time="' + submitTime + '" data-name="' + name + '">' +
+                             '<option value="待处理"' + (status === "待处理" ? " selected" : "") + '>待处理</option>' +
+                             '<option value="已反馈"' + (status === "已反馈" ? " selected" : "") + '>已反馈</option>' +
+                             '<option value="已录入"' + (status === "已录入" ? " selected" : "") + '>已录入</option>' +
+                             '</select>';
+
+          var checkbox = '<td><input type="checkbox" class="form-check-input record-checkbox" data-time="' + submitTime + '" data-name="' + name + '" /></td>';
+          
+          if (isExternal) {
+            tr.innerHTML =
+              checkbox +
+              "<td>" + name + "</td>" +
+              "<td>" + escapeHtml(row["班级"] || "") + "</td>" +
+              "<td>" + escapeHtml(row["年级"] || "") + "</td>" +
+              "<td>" + escapeHtml(row["志愿活动所处学年"] || "") + "</td>" +
+              "<td>" + escapeHtml(row["活动名称"] || "") + "</td>" +
+              "<td>" + escapeHtml(String(row["时长"] || "")) + "</td>" +
+              "<td>" + escapeHtml(String(row["活动项数"] || "")) + "</td>" +
+              "<td>" + proofActions + "</td>" +
+              "<td>" + photoActions + "</td>" +
+              "<td>" + escapeHtml(row["微信号联系方式"] || "") + "</td>" +
+              "<td>" + statusSelect + "</td>" +
+              "<td>" + adminNoteDisplay + "</td>" +
+              "<td><div class='d-flex gap-1'>" + remarkBtn + deleteBtn + "</div></td>";
+          } else {
+            tr.innerHTML =
+              checkbox +
+              "<td>" + name + "</td>" +
+              "<td>" + escapeHtml(row["班级"] || "") + "</td>" +
+              "<td>" + escapeHtml(row["年级"] || "") + "</td>" +
+              "<td>" + escapeHtml(row["志愿活动所处学年"] || "") + "</td>" +
+              "<td>" + escapeHtml(row["活动名称"] || "") + "</td>" +
+              "<td>" + escapeHtml(String(row["时长"] || "")) + "</td>" +
+              "<td>" + proofActions + "</td>" +
+              "<td>" + escapeHtml(row["微信号联系方式"] || "") + "</td>" +
+              "<td>" + statusSelect + "</td>" +
+              "<td>" + adminNoteDisplay + "</td>" +
+              "<td><div class='d-flex gap-1'>" + remarkBtn + deleteBtn + "</div></td>";
+          }
+          bodyEl.appendChild(tr);
+        });
+        wrapEl.classList.remove("d-none");
+        return rows.length;
+      }
+
+      function loadRecords() {
+        if (recordsMsg) recordsMsg.textContent = "";
+        if (!token) { if (recordsMsg) recordsMsg.textContent = "请先登录管理员"; return; }
+        fetch(API_BASE + "/api/admin/topup-records?limit=300", {
+          method: "GET",
+          headers: { Authorization: "Bearer " + token, Accept: "application/json" }
+        })
+          .then(function (res) {
+            if (res.status === 401) {
+              if (recordsMsg) recordsMsg.innerHTML = '<span class="text-danger fw-bold">登录已过期，请重新登录</span>';
+              clearToken();
+              renderAuthUI();
+              throw new Error("unauthorized");
+            }
+            return res.json().then(function (json) { return { res: res, json: json }; });
+          })
+          .then(function (pair) {
+            if (!pair.res.ok) {
+              if (recordsMsg) recordsMsg.textContent = parseApiError(pair.json);
+              return;
+            }
+            var rows = pair.json && pair.json.data ? pair.json.data : [];
+            var internalRows = rows.filter(function (r) { return String(r["补录类型"] || "") === "校内"; });
+            var externalRows = rows.filter(function (r) { return String(r["补录类型"] || "") === "校外"; });
+            var c1 = renderRowsToTable(internalRows, recordsBodyInternal, recordsWrapInternal, false);
+            var c2 = renderRowsToTable(externalRows, recordsBodyExternal, recordsWrapExternal, true);
+            if (recordsMsg) recordsMsg.textContent = "校内 " + c1 + " 条，校外 " + c2 + " 条";
+            
+            // 重置全选框
+            document.querySelectorAll(".select-all").forEach(function(cb) { cb.checked = false; });
+            updateBatchOpsVisibility();
+          })
+          .catch(function () {
+            if (recordsMsg) recordsMsg.textContent = "加载失败：无法连接后端";
+          });
+      }
+
+      function updateBatchOpsVisibility() {
+        var anyChecked = !!document.querySelector(".record-checkbox:checked");
+        if (batchOpsGroup) batchOpsGroup.classList.toggle("d-none", !anyChecked);
+      }
+
+      function updateRecordsBatch(items, status, adminNote) {
+        if (!items || items.length === 0) return;
+        var msg = status ? "批量将 " + items.length + " 条记录设为 " + status + " 吗？" : "批量更新 " + items.length + " 条记录的备注吗？";
+        if (!confirm(msg)) return;
+        
+        if (recordsMsg) recordsMsg.textContent = "正在批量更新...";
+        fetch(API_BASE + "/api/admin/update-topup-batch", {
+          method: "POST",
+          headers: {
+            Authorization: "Bearer " + token,
+            "Content-Type": "application/json",
+            Accept: "application/json"
+          },
+          body: JSON.stringify({ items: items, status: status, admin_note: adminNote })
+        })
+          .then(function (res) {
+            return res.json().then(function (json) { return { res: res, json: json }; });
+          })
+          .then(function (pair) {
+            if (!pair.res.ok) {
+              if (recordsMsg) recordsMsg.textContent = "批量更新失败：" + parseApiError(pair.json);
+              return;
+            }
+            if (recordsMsg) recordsMsg.textContent = pair.json.message || "批量更新成功";
+            loadRecords(); // 刷新列表
+          })
+          .catch(function () {
+            if (recordsMsg) recordsMsg.textContent = "批量更新失败：无法连接后端";
+          });
+      }
+
+      function deleteRecordBatch(items) {
+        if (!items || items.length === 0) return;
+        if (!confirm("确定要批量删除选中的 " + items.length + " 条记录吗？此操作不可撤销。")) return;
+        
+        if (recordsMsg) recordsMsg.textContent = "正在批量删除...";
+        fetch(API_BASE + "/api/admin/delete-topup-batch", {
+          method: "POST",
+          headers: {
+            Authorization: "Bearer " + token,
+            "Content-Type": "application/json",
+            Accept: "application/json"
+          },
+          body: JSON.stringify({ items: items })
+        })
+          .then(function (res) {
+            return res.json().then(function (json) { return { res: res, json: json }; });
+          })
+          .then(function (pair) {
+            if (!pair.res.ok) {
+              if (recordsMsg) recordsMsg.textContent = "批量删除失败：" + parseApiError(pair.json);
+              return;
+            }
+            if (recordsMsg) recordsMsg.textContent = pair.json.message || "批量删除成功";
+            loadRecords(); // 刷新列表
+          })
+          .catch(function () {
+            if (recordsMsg) recordsMsg.textContent = "批量删除失败：无法连接后端";
+          });
+      }
+
+      function fetchFileBlob(relPath) {
+        return fetch(API_BASE + "/api/admin/uploaded-file?rel_path=" + encodeURIComponent(relPath), {
+          method: "GET",
+          headers: { Authorization: "Bearer " + token }
+        }).then(function (res) {
+          if (!res.ok) {
+            return res.json().then(function (json) { throw new Error(parseApiError(json)); });
+          }
+          return Promise.all([res.blob(), Promise.resolve(res.headers.get("content-type") || "application/octet-stream")]);
+        });
+      }
+
+      function previewFile(relPath) {
+        if (recordsMsg) recordsMsg.textContent = "";
+        fetchFileBlob(relPath)
+          .then(function (pair) {
+            var blob = pair[0];
+            var mime = pair[1];
+            var url = URL.createObjectURL(blob);
+            
+            // 如果是图片，直接在当前页面展示一个简易 Modal 或新窗口
+            if (mime.indexOf("image/") !== -1) {
+              var win = window.open("", "_blank");
+              win.document.write('<html><head><title>图片预览</title><style>body{margin:0;display:flex;justify-content:center;align-items:center;background:#000;}img{max-width:100%;max-height:100%;object-fit:contain;}</style></head><body><img src="' + url + '"></body></html>');
+            } else {
+              window.open(url, "_blank");
+            }
+            setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
+          })
+          .catch(function (e) {
+            if (recordsMsg) recordsMsg.textContent = "预览失败：" + (e && e.message ? e.message : "未知错误");
+          });
+      }
+
+      function downloadFile(relPath) {
+        if (recordsMsg) recordsMsg.textContent = "";
+        fetchFileBlob(relPath)
+          .then(function (pair) {
+            var blob = pair[0];
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement("a");
+            a.href = url;
+            var fallback = String(relPath || "附件").split("/").pop() || "附件";
+            a.download = fallback;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+          })
+          .catch(function (e) {
+            if (recordsMsg) recordsMsg.textContent = "下载失败：" + (e && e.message ? e.message : "未知错误");
+          });
+      }
+
+      function deleteRecord(submitTime, name) {
+        if (!confirm("确定要删除这条补录记录吗？此操作不可撤销。")) return;
+        if (recordsMsg) recordsMsg.textContent = "正在删除...";
+        fetch(API_BASE + "/api/admin/delete-topup", {
+          method: "POST",
+          headers: {
+            Authorization: "Bearer " + token,
+            "Content-Type": "application/json",
+            Accept: "application/json"
+          },
+          body: JSON.stringify({ submit_time: submitTime, name: name })
+        })
+          .then(function (res) {
+            return res.json().then(function (json) { return { res: res, json: json }; });
+          })
+          .then(function (pair) {
+            if (!pair.res.ok) {
+              if (recordsMsg) recordsMsg.textContent = "删除失败：" + parseApiError(pair.json);
+              return;
+            }
+            if (recordsMsg) recordsMsg.textContent = "删除成功";
+            loadRecords(); // 刷新列表
+          })
+          .catch(function () {
+            if (recordsMsg) recordsMsg.textContent = "删除失败：无法连接后端";
+          });
+      }
+
+      btnAdminLogin && btnAdminLogin.addEventListener("click", function () {
+        if (adminMsg) adminMsg.textContent = "";
+        var u = adminUsername && adminUsername.value ? String(adminUsername.value).trim() : "";
+        var p = adminPassword && adminPassword.value ? String(adminPassword.value).trim() : "";
+        if (!u || !p) {
+          if (adminMsg) adminMsg.textContent = "请输入管理员账号与密码";
+          return;
+        }
+
+        fetch(API_BASE + "/api/admin/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Accept: "application/json" },
+          body: JSON.stringify({ username: u, password: p })
+        })
+          .then(function (res) {
+            return res.json().then(function (json) { return { res: res, json: json }; });
+          })
+          .then(function (pair) {
+            if (!pair.res.ok) {
+              if (adminMsg) adminMsg.textContent = parseApiError(pair.json);
+              return;
+            }
+            token = pair.json && pair.json.token ? pair.json.token : null;
+            if (!token) {
+              if (adminMsg) adminMsg.textContent = "登录成功但 token 为空";
+              return;
+            }
+            setToken(token);
+            if (adminMsg) adminMsg.textContent = "登录成功";
+            renderAuthUI();
+            loadRecords();
+          })
+          .catch(function () {
+            if (adminMsg) adminMsg.textContent = "无法连接后端，请确认 API_BASE 与服务已启动";
+          });
+      });
+
+      // 高级管理员登录逻辑
+      var btnSeniorLogin = document.getElementById("btn-senior-login");
+      var btnSeniorLogout = document.getElementById("btn-senior-logout");
+      var seniorUsernameInput = document.getElementById("senior-username");
+      var seniorPasswordInput = document.getElementById("senior-password");
+      var seniorMsg = document.getElementById("senior-msg");
+      var seniorLoginBox = document.getElementById("senior-admin-login-box");
+      var seniorAdminPanel = document.getElementById("senior-admin-panel");
+
+      btnSeniorLogin && btnSeniorLogin.addEventListener("click", function() {
+        if (seniorMsg) seniorMsg.textContent = "";
+        var su = seniorUsernameInput && seniorUsernameInput.value ? String(seniorUsernameInput.value).trim() : "";
+        var sp = seniorPasswordInput && seniorPasswordInput.value ? String(seniorPasswordInput.value).trim() : "";
+        if (!su || !sp) {
+          if (seniorMsg) seniorMsg.textContent = "请输入账号密码";
+          return;
+        }
+
+        fetch(API_BASE + "/api/admin/senior-login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username: su, password: sp })
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(json) {
+          if (!json.ok) {
+            if (seniorMsg) seniorMsg.textContent = json.message || "验证失败";
+            return;
+          }
+          seniorToken = json.senior_token;
+          if (seniorLoginBox) seniorLoginBox.classList.add("d-none");
+          if (seniorAdminPanel) seniorAdminPanel.classList.remove("d-none");
+        })
+        .catch(function() {
+          if (seniorMsg) seniorMsg.textContent = "无法连接验证接口";
+        });
+      });
+
+      btnSeniorLogout && btnSeniorLogout.addEventListener("click", function() {
+        seniorToken = null;
+        if (seniorLoginBox) seniorLoginBox.classList.remove("d-none");
+        if (seniorAdminPanel) seniorAdminPanel.classList.add("d-none");
+        if (seniorUsernameInput) seniorUsernameInput.value = "";
+        if (seniorPasswordInput) seniorPasswordInput.value = "";
+      });
+
+      btnUploadMaster && btnUploadMaster.addEventListener("click", function () {
+        if (uploadMsg) uploadMsg.textContent = "";
+        // 这里必须使用 seniorToken 验证
+        if (!seniorToken) { if (uploadMsg) uploadMsg.textContent = "请先通过高级权限验证"; return; }
+
+        var grade = document.getElementById("master-grade").value;
+        if (!grade) { if (uploadMsg) uploadMsg.textContent = "请选择适用年级"; return; }
+
+        var file = masterFile && masterFile.files && masterFile.files[0];
+        if (!file) { if (uploadMsg) uploadMsg.textContent = "请选择 .xlsx 总表文件"; return; }
+
+        var fd = new FormData();
+        fd.append("file", file);
+        fd.append("grade", grade);
+
+        fetch(API_BASE + "/api/admin/upload-master", {
+          method: "POST",
+          headers: { Authorization: "Bearer " + seniorToken },
+          body: fd
+        })
+          .then(function (res) { return res.json().then(function (json) { return { res: res, json: json }; }); })
+          .then(function (pair) {
+            if (!pair.res.ok) { if (uploadMsg) uploadMsg.textContent = parseApiError(pair.json); return; }
+            if (uploadMsg) uploadMsg.textContent = pair.json && pair.json.message ? pair.json.message : "上传成功";
+            loadMasterFilesList(); // 上传成功后刷新列表
+          })
+          .catch(function () {
+            if (uploadMsg) uploadMsg.textContent = "上传失败：无法连接后端";
+          });
+      });
+
+      btnDownloadTopup && btnDownloadTopup.addEventListener("click", function () {
+        if (downloadMsg) downloadMsg.textContent = "";
+        if (!token) { if (downloadMsg) downloadMsg.textContent = "请先登录管理员"; return; }
+
+        fetch(API_BASE + "/api/admin/download-topup", {
+          method: "GET",
+          headers: { Authorization: "Bearer " + token }
+        })
+          .then(function (res) {
+            if (!res.ok) {
+              return res.json().then(function (json) { throw new Error(parseApiError(json)); });
+            }
+            return res.arrayBuffer().then(function (buf) { return { buf: buf, res: res }; });
+          })
+          .then(function (pair) {
+            var blob = new Blob([pair.buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement("a");
+            a.href = url;
+            a.download = "学生时长补录汇总.xlsx";
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+            if (downloadMsg) downloadMsg.textContent = "下载已开始";
+          })
+          .catch(function (e) {
+            if (downloadMsg) downloadMsg.textContent = String(e && e.message ? e.message : "下载失败");
+          });
+      });
+
+      btnAdminDownloadMaster && btnAdminDownloadMaster.addEventListener("click", function () {
+        if (!token) { alert("请先登录管理员"); return; }
+        var grade = downloadGradeSelect.value;
+        if (!grade) { alert("请选择要下载的年级"); return; }
+
+        fetch(API_BASE + "/api/admin/download-master?grade=" + grade, {
+          method: "GET",
+          headers: { Authorization: "Bearer " + token }
+        })
+          .then(function (res) {
+            if (!res.ok) {
+              return res.json().then(function (json) { throw new Error(parseApiError(json)); });
+            }
+            return res.arrayBuffer().then(function (buf) { return { buf: buf, res: res }; });
+          })
+          .then(function (pair) {
+            var blob = new Blob([pair.buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement("a");
+            a.href = url;
+            a.download = "学生志愿时长总表_" + grade + ".xlsx";
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+          })
+          .catch(function (e) {
+            alert(String(e && e.message ? e.message : "下载失败"));
+          });
+      });
+
+      var btnMergeGrades = document.getElementById("btn-merge-grades");
+      var mergeMsg = document.getElementById("merge-msg");
+      var mergeFileSingle = document.getElementById("merge-file-single");
+
+      btnMergeGrades && btnMergeGrades.addEventListener("click", function () {
+        if (mergeMsg) mergeMsg.textContent = "";
+        if (!token) { if (mergeMsg) mergeMsg.textContent = "请先登录管理员"; return; }
+
+        var file = mergeFileSingle && mergeFileSingle.files && mergeFileSingle.files[0];
+
+        if (!file) {
+          if (mergeMsg) mergeMsg.textContent = "请选择需要合并的 Excel 文件";
+          return;
+        }
+
+        if (mergeMsg) mergeMsg.textContent = "正在合并并处理，请稍候...";
+        var fd = new FormData();
+        fd.append("file", file);
+
+        fetch(API_BASE + "/api/admin/merge-grades", {
+          method: "POST",
+          headers: { Authorization: "Bearer " + token },
+          body: fd
+        })
+          .then(function (res) {
+            if (!res.ok) {
+              return res.json().then(function (json) { throw new Error(parseApiError(json)); });
+            }
+            return res.arrayBuffer().then(function (buf) { return { buf: buf, res: res }; });
+          })
+          .then(function (pair) {
+            var blob = new Blob([pair.buf], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement("a");
+            a.href = url;
+            var originalName = file.name.replace(/\.[^/.]+$/, "");
+            a.download = originalName + "_合并结果.xlsx";
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+            if (mergeMsg) mergeMsg.textContent = "合并完成，下载已开始";
+          })
+          .catch(function (e) {
+            if (mergeMsg) mergeMsg.textContent = String(e && e.message ? e.message : "合并失败");
+          });
+      });
+
+      // 时长录入逻辑
+      var importFailedWrap = document.getElementById("import-failed-wrap");
+      var importFailedNames = document.getElementById("import-failed-names");
+      
+      var lastImportedFile = null;
+      var lastImportedFilename = "";
+
+      window.doImportDurations = function () {
+        var fA = document.getElementById("import-file-pending").files[0];
+        var fB = document.getElementById("import-file-master").files[0];
+        var msgEl = document.getElementById("import-msg");
+        var dlBtn = document.getElementById("download-imported-btn");
+
+        if (msgEl) msgEl.textContent = "";
+        if (importFailedWrap) importFailedWrap.classList.add("d-none");
+        if (dlBtn) dlBtn.classList.add("d-none");
+
+        if (!token) { if (msgEl) msgEl.textContent = "请先登录管理员"; return; }
+        if (!fA || !fB) { if (msgEl) msgEl.textContent = "请同时选择待录入表与原时长总表"; return; }
+
+        if (msgEl) msgEl.textContent = "正在处理中，请稍候...";
+        var fd = new FormData();
+        fd.append("pending_file", fA);
+        fd.append("master_file", fB);
+        fd.append("multi_sheet", "true");
+
+        fetch(API_BASE + "/api/admin/append-durations", {
+          method: "POST",
+          headers: { Authorization: "Bearer " + token },
+          body: fd
+        })
+          .then(function (res) {
+            return res.json().then(function (json) { return { res: res, json: json }; });
+          })
+          .then(function (pair) {
+            if (!pair.res.ok) throw new Error(parseApiError(pair.json));
+            
+            var data = pair.json;
+            if (msgEl) {
+              var succ = data.success_count || 0;
+              var fail = (data.failed_names && data.failed_names.length) || 0;
+              var gradeCounts = data.grade_success_counts || null;
+
+              // 兜底：如果后端字段缺失（例如旧后端未重启/缓存未更新），也至少展示“按年级”成功效果。
+              if (!gradeCounts || Object.keys(gradeCounts).length === 0) {
+                if (succ > 0) gradeCounts = { "未知年级": succ };
+              }
+
+              var gradeKeys = Object.keys(gradeCounts || {});
+              var parts = [];
+              for (var i = 0; i < gradeKeys.length; i++) {
+                var g = gradeKeys[i];
+                parts.push(escapeHtml(g) + '：' + (gradeCounts[g] || 0) + '条');
+              }
+
+              if (fail === 0 && gradeKeys.length === 1) {
+                msgEl.innerHTML = '<span class="text-success fw-bold">' + parts[0].replace('：' + succ + '条', '') + '录入成功：' + succ + ' 条</span>';
+              } else {
+                var html = '<span class="text-success fw-bold">录入成功：' + succ + ' 条</span>';
+                if (parts.length > 0) {
+                  html += '<br><span class="text-secondary fw-bold">各年级成功：' + parts.join('；') + '</span>';
+                }
+                if (fail > 0) {
+                  html += '<br><span class="text-warning fw-bold">未匹配：' + fail + ' 条</span>';
+                }
+                msgEl.innerHTML = html;
+              }
+            }
+            
+            if (data.failed_names && data.failed_names.length > 0) {
+              if (importFailedWrap) importFailedWrap.classList.remove("d-none");
+              if (importFailedNames) {
+                var formattedNames = "";
+                for (var i = 0; i < data.failed_names.length; i++) {
+                  formattedNames += '<span class="badge bg-light text-dark border me-2 mb-2">' + escapeHtml(data.failed_names[i]) + '</span>';
+                }
+                importFailedNames.innerHTML = formattedNames;
+              }
+            }
+            
+            if (data.file_b64) {
+              lastImportedFile = data.file_b64;
+              lastImportedFilename = data.suggested_filename || "更新后总表.xlsx";
+              if (dlBtn) dlBtn.classList.remove("d-none");
+            }
+          })
+          .catch(function (e) {
+            if (msgEl) msgEl.textContent = String(e && e.message ? e.message : "录入失败");
+          });
+      };
+
+      document.querySelectorAll(".download-imported-btn").forEach(function(btn) {
+        btn.addEventListener("click", function() {
+          if (!lastImportedFile) return;
+          var byteCharacters = atob(lastImportedFile);
+          var byteNumbers = new Array(byteCharacters.length);
+          for (var i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+          }
+          var byteArray = new Uint8Array(byteNumbers);
+          var blob = new Blob([byteArray], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement("a");
+          a.href = url;
+          a.download = lastImportedFilename;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(url);
+        });
+      });
+
+      btnLoadRecords && btnLoadRecords.addEventListener("click", loadRecords);
+
+      document.querySelectorAll(".batch-status-change").forEach(function(el) {
+        el.addEventListener("click", function() {
+          var status = this.getAttribute("data-status");
+          var selected = [];
+          document.querySelectorAll(".record-checkbox:checked").forEach(function(cb) {
+            selected.push({
+              submit_time: cb.getAttribute("data-time"),
+              name: cb.getAttribute("data-name")
+            });
+          });
+          updateRecordsBatch(selected, status, null);
+        });
+      });
+
+      btnBatchDelete && btnBatchDelete.addEventListener("click", function() {
+        var selected = [];
+        document.querySelectorAll(".record-checkbox:checked").forEach(function(cb) {
+          selected.push({
+            submit_time: cb.getAttribute("data-time"),
+            name: cb.getAttribute("data-name")
+          });
+        });
+        deleteRecordBatch(selected);
+      });
+
+      function bindTableFileActions(tableBody) {
+        if (!tableBody) return;
+        tableBody.addEventListener("click", function (ev) {
+          var target = ev.target;
+          if (!target || !target.getAttribute) return;
+          if (target.classList.contains("file-preview")) {
+            var rel = target.getAttribute("data-rel");
+            if (rel) previewFile(rel);
+          } else if (target.classList.contains("file-download")) {
+            var rel2 = target.getAttribute("data-rel");
+            if (rel2) downloadFile(rel2);
+          } else if (target.classList.contains("record-delete")) {
+            var t = target.getAttribute("data-time");
+            var n = target.getAttribute("data-name");
+            if (t && n) deleteRecord(t, n);
+          } else if (target.classList.contains("record-remark")) {
+            var t = target.getAttribute("data-time");
+            var n = target.getAttribute("data-name");
+            var oldNote = target.getAttribute("data-note") || "";
+            var newNote = prompt("请输入管理员备注：", oldNote);
+            if (newNote !== null) {
+              updateRecordsBatch([{ submit_time: t, name: n }], null, newNote);
+            }
+          }
+        });
+
+        tableBody.addEventListener("change", function(ev) {
+          var target = ev.target;
+          if (target.classList.contains("record-checkbox")) {
+            updateBatchOpsVisibility();
+          } else if (target.classList.contains("record-status-select")) {
+            var t = target.getAttribute("data-time");
+            var n = target.getAttribute("data-name");
+            var newStatus = target.value;
+            updateRecordsBatch([{ submit_time: t, name: n }], newStatus, null);
+          }
+        });
+      }
+
+      document.querySelectorAll(".select-all").forEach(function(selectAllCb) {
+        selectAllCb.addEventListener("change", function() {
+          var target = this.getAttribute("data-target"); // internal or external
+          var body = (target === "internal") ? recordsBodyInternal : recordsBodyExternal;
+          if (!body) return;
+          var checkboxes = body.querySelectorAll(".record-checkbox");
+          var isChecked = this.checked;
+          checkboxes.forEach(function(cb) {
+            cb.checked = isChecked;
+          });
+          updateBatchOpsVisibility();
+        });
+      });
+
+      bindTableFileActions(recordsBodyInternal);
+      bindTableFileActions(recordsBodyExternal);
+
+      btnLogout && btnLogout.addEventListener("click", function () {
+        token = null;
+        clearToken();
+        renderAuthUI();
+        if (adminMsg) adminMsg.textContent = "";
+        if (uploadMsg) uploadMsg.textContent = "";
+        if (downloadMsg) downloadMsg.textContent = "";
+        if (recordsMsg) recordsMsg.textContent = "";
+      });
+    })();
+  </script>
+</body>
+</html>
+

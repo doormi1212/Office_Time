@@ -1,0 +1,13 @@
+[Unit]
+Description=FastAPI Volunteer Time System
+After=network.target
+
+[Service]
+User=root
+Group=root
+WorkingDirectory=/www/wwwroot/www.officeshichang.icu
+ExecStart=/www/wwwroot/www.officeshichang.icu/.venv/bin/python api.py
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
